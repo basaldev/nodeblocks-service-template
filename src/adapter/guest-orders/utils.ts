@@ -14,7 +14,7 @@ import {
   NormalizedLineItem,
   NormalizedGuestOrder
 } from './types';
-import { GuestOrderEntity } from './dataServices/guest-order.dataServices';
+import { GuestOrderEntity } from './dataServices';
 
 export async function prepareGuestOrderResponse(
   queryExpand: string,

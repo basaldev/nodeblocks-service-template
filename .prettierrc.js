@@ -1,0 +1,1 @@
+"@basaldev/prettier-config"

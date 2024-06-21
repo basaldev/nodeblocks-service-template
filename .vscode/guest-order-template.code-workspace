@@ -1,0 +1,22 @@
+{
+  "folders": [
+    {
+      "path": ".."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/*.js": {
+        "when": "$(basename).ts"
+      },
+      "**/*.map": true
+    },
+    "search.exclude": {
+      "**/.pnp.*": true,
+      "**/.yarn": true
+    },
+    "eslint.nodePath": ".yarn/sdks",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "typescript.tsdk": ".yarn/sdks/typescript/lib"
+  }
+}

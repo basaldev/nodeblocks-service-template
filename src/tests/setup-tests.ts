@@ -21,8 +21,8 @@ import {
   createNodeblocksOrganizationApp,
 } from '@basaldev/blocks-organization-service';
 
-import { GuestOrderDefaultAdapter, ADAPTER_NAME } from '../../src/adapter'
-import { createNodeblockGuestsOrderApp } from '../createNodeblocksGuestOrderApp';
+import { GuestOrderAdapter, ADAPTER_NAME } from '../adapter/guest-orders/adapter'
+import { createNodeblocksOrderApp } from '@basaldev/blocks-order-service';
 
 export interface NodeblocksServices {
   catalogServer: Server,
@@ -30,7 +30,7 @@ export interface NodeblocksServices {
   guestOrderServer: Server,
   catalogDefaultAdapter: CatalogAdapter.CatalogDefaultAdapter,
   organizationDefaultAdapter: OrganizationAdapter.OrganizationDefaultAdapter,
-  guestOrderAdapter: GuestOrderDefaultAdapter,
+  guestOrderAdapter: GuestOrderAdapter,
   catalogAPI: CatalogDefaultAdapterRestSdk,
   organizationAPI: OrganizationDefaultAdapterRestSdk;
 }
@@ -114,13 +114,13 @@ export async function setupTests(): Promise<NodeblocksServices> {
     }
   );
 
-  const guestOrderAdapter = new GuestOrderDefaultAdapter(
+  const guestOrderAdapter = new GuestOrderAdapter(
     {
       authEncSecret: authSecrets.authEncSecret,
       authSignSecret: authSecrets.authSignSecret,
       serviceEndpoints: { guestOrder: GUEST_ORDER_SERVER_URL },
     },
-    { catalogAPI, db, organizationAPI }
+    { catalogAPI, db, organizationAPI, userAPI }
   );
 
   const catalogServer = await createNodeblocksCatalogApp({
@@ -139,7 +139,7 @@ export async function setupTests(): Promise<NodeblocksServices> {
     env: 'development',
   });
 
-  const guestOrderServer = await createNodeblockGuestsOrderApp({
+  const guestOrderServer = await createNodeblocksOrderApp({
     corsOrigin: /.*/,
   }).startService({
     PORT: GUEST_ORDER_PORT,

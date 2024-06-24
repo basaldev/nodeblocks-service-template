@@ -1,43 +1,39 @@
 /* eslint-disable typescript-sort-keys/interface */
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 
-import { defaultAdapter } from '@basaldev/blocks-order-service';
+import { defaultAdapter, OrderAdapter } from '@basaldev/blocks-order-service';
 import { crypto, adapter, security, Logger } from '@basaldev/blocks-backend-sdk';
-import {
-  GuestOrderAdapter,
-  GuestOrderDefaultAdapterOptions,
-  GuestOrderDefaultAdapterDependencies
-} from './adapter/guest-orders/types';
+import { GuestOrderAdapterOptions } from './types';
 
 import { partial } from 'lodash';
 
 import {
   GuestOrderDataService,
   getCreateGuestOrderDtoSchema,
-} from './adapter/guest-orders/dataServices';
+} from './dataServices';
 import {
   productContainsVariant,
   guestOrderBelongsToOrganization,
-} from './adapter/guest-orders/validators';
+} from './validators';
 import {
   createGuestOrderHandler,
   listOrdersForOrganizationHandler,
   getGuestOrderHandler,
-} from './adapter/guest-orders/handlers';
+} from './handlers';
 
 export const ADAPTER_NAME = 'guest-order-default-adapter';
 
 /**
- * Guest Order default adapter
+ * Guest Order adapter
  * @group Adapter
  */
-export class GuestOrderDefaultAdapter implements GuestOrderAdapter {
+export class GuestOrderAdapter implements OrderAdapter {
   adapterName = ADAPTER_NAME;
   authSecrets: crypto.AuthSecrets;
   opts: Required<
-    Omit<GuestOrderDefaultAdapterOptions, keyof crypto.AuthSecrets>
+    Omit<GuestOrderAdapterOptions, keyof crypto.AuthSecrets>
   >;
-  dependencies: GuestOrderDefaultAdapterDependencies;
+  dependencies: defaultAdapter.OrderDefaultAdapterDependencies;
   dataServices: {
     guestOrder: GuestOrderDataService;
   };
@@ -72,6 +68,8 @@ export class GuestOrderDefaultAdapter implements GuestOrderAdapter {
    */
   getGuestOrder: adapter.HandlerAndValidators<
     {
+      authentication: security.Predicate | undefined;
+      authorization: security.Predicate | undefined;
       guestOrderBelongsToOrganization: security.Predicate | undefined;
     } & Record<string, security.Predicate>
   >;
@@ -87,19 +85,31 @@ export class GuestOrderDefaultAdapter implements GuestOrderAdapter {
    */
   listGuestOrdersForOrganization: adapter.HandlerAndValidators<
     {
+      authentication: security.Predicate | undefined;
+      authorization: security.Predicate | undefined;
       organizationExists: security.Predicate | undefined;
     } & Record<string, security.Predicate>
   >;
 
+  calculateOrderStatisticsForProducts: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
+  createOrder: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
+  deleteOrder: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
+  getOrder: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
+  listOrders: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
+  listOrdersForOrganization: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
+  listOrdersForUser: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
+  updateOrder: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
+
   constructor(
-    opts: GuestOrderDefaultAdapterOptions,
-    dependencies: GuestOrderDefaultAdapterDependencies
+    opts: GuestOrderAdapterOptions,
+    dependencies: defaultAdapter.OrderDefaultAdapterDependencies
   ) {
     this.authSecrets = {
       authEncSecret: opts.authEncSecret,
       authSignSecret: opts.authSignSecret,
     };
     this.opts = {
+      authenticate: opts.authenticate ?? security.defaultBearerAuth,
       customFields: opts.customFields ?? { order: [] },
       paginationConfiguration: opts.paginationConfiguration ?? {
         defaultOffset: 0,
@@ -110,7 +120,14 @@ export class GuestOrderDefaultAdapter implements GuestOrderAdapter {
     };
     this.dependencies = dependencies;
     this.dataServices = {
-      guestOrder: new GuestOrderDataService(dependencies.db),
+      guestOrder: new GuestOrderDataService(
+        this.opts.customFields.order ?? [],
+        {
+          db: dependencies.db,
+          catalogService: dependencies.catalogAPI,
+          organizationService: dependencies.organizationAPI,
+        }
+      ),
     };
 
     this.createGuestOrder = {
@@ -161,6 +178,13 @@ export class GuestOrderDefaultAdapter implements GuestOrderAdapter {
         );
       },
       validators: {
+        authentication: security.createIsAuthenticatedValidator(
+          this.authSecrets,
+          this.opts.authenticate
+        ),
+        authorization: this.dependencies.userAPI.createIsAdminUserValidator(
+          this.authSecrets
+        ),
         guestOrderBelongsToOrganization: partial(
           guestOrderBelongsToOrganization,
           this.dataServices.guestOrder,
@@ -187,12 +211,52 @@ export class GuestOrderDefaultAdapter implements GuestOrderAdapter {
         );
       },
       validators: {
+        authentication: security.createIsAuthenticatedValidator(
+          this.authSecrets,
+          this.opts.authenticate
+        ),
+        authorization: this.dependencies.userAPI.createIsAdminUserValidator(
+          this.authSecrets
+        ),
         organizationExists: partial(
           defaultAdapter.isOrganizationExists,
           { name: 'orgId', type: 'params' },
           this.dependencies.organizationAPI
         ),
       },
+    };
+
+    this.calculateOrderStatisticsForProducts = {
+      handler: adapter.notFoundHandler,
+      validators: {},
+    };
+    this.createOrder = {
+      handler: adapter.notFoundHandler,
+      validators: {},
+    };
+    this.deleteOrder = {
+      handler: adapter.notFoundHandler,
+      validators: {},
+    };
+    this.getOrder = {
+      handler: adapter.notFoundHandler,
+      validators: {},
+    };
+    this.listOrders = {
+      handler: adapter.notFoundHandler,
+      validators: {},
+    };
+    this.listOrdersForOrganization = {
+      handler: adapter.notFoundHandler,
+      validators: {},
+    };
+    this.listOrdersForUser = {
+      handler: adapter.notFoundHandler,
+      validators: {},
+    };
+    this.updateOrder = {
+      handler: adapter.notFoundHandler,
+      validators: {},
     };
   }
 }

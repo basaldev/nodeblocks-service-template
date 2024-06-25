@@ -14,7 +14,7 @@ import { ok } from 'assert';
  *
  * @group Handlers
  *
- * @description This handler is used to get orders for an organization by applying the following steps in sequence:
+ * @description This handler is used to get guest orders for an organization by applying the following steps in sequence:
  *
  * 1. Checks orgId provided
  *

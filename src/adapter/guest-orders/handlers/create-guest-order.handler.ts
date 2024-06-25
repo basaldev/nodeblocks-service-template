@@ -16,6 +16,41 @@ import {
 } from '../types';
 import { GuestOrderDataService } from '../dataServices';
 
+/**
+ * Create guest order handler
+ *
+ * @group Handlers
+ *
+ * @description This handler is used to create a guest order by applying the following steps in sequence:
+ *
+ * 1. Get available products from organization (catalogService.getAvailableProducts)
+ *
+ * 2. Get variants from the products.
+ *
+ * 3. Create guest order (guestOrderService.createOrder)
+ *
+ * 4. Fetches guest order (guestOrderService.getOneOrder)
+ *
+ * 5. Normalize guest order and expand if any
+ *
+ * 6. Return guest order data
+ *
+ * @param guestOrderService injected service use to handle guest order related operations
+ *
+ * @param logger injected logger use to handle logging
+ *
+ * @param context request context [headers, body, params, query].
+ * - `params.orgId` is required
+ *
+ * @throws 400 NBError Bad Request
+ * - wrong variant
+ *
+ * @throws 500 NBError Internal Server Error
+ * - operation failed to create a guest order
+ *
+ * @returns 201 Status Create
+ * - data: guest order data
+ */
 export async function createGuestOrderHandler(
   guestOrderService: Pick<
     GuestOrderDataService, 'createOrder' | 'getOneOrder'| 'prepareGuestOrderResponse' | 'catalogService'

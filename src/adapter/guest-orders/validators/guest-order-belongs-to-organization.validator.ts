@@ -11,7 +11,7 @@ import { OrganizationDefaultAdapterAPI } from '@basaldev/blocks-default-adapter-
 import { get } from 'lodash';
 
 /**
- * Order belongs to organization validator
+ * Guest order belongs to organization validator
  *
  * @group Validators
  *

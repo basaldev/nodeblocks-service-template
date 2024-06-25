@@ -84,7 +84,11 @@ describe('listOrdersForOrganizationHandler', () => {
 
     const response = await listOrdersForOrganizationHandler(
       mockedGuestOrderService,
-      { maxPageSize: 20 },
+      {
+        defaultOffset: 0,
+        defaultPageSize: 20,
+        maxPageSize: 1000,
+      },
       mockedLogger,
       {
         ...dummyContext,
@@ -115,13 +119,13 @@ describe('listOrdersForOrganizationHandler', () => {
       }],
     });
     expect(mockedGuestOrderService.getPaginatedGuestOrdersByOrgId).toHaveBeenCalledWith(
-      "dummy-org-id",
-      undefined,
-      [],
+      dummyOrganizationId,
       {
-        limit: 20,
-        offset: 0,
-        type: 'offset'
+        applyExpression: undefined,
+        expandExpression: undefined,
+        filterExpression: undefined,
+        orderParams: undefined,
+        pagination: {limit: 20, offset: 0, type: "offset"}
       }
     );
   });
@@ -148,7 +152,11 @@ describe('listOrdersForOrganizationHandler', () => {
 
     const response = await listOrdersForOrganizationHandler(
       mockedGuestOrderService,
-      { maxPageSize: 20 },
+      {
+        defaultOffset: 0,
+        defaultPageSize: 20,
+        maxPageSize: 1000,
+      },
       mockedLogger,
       {
         ...dummyContext,
@@ -179,13 +187,13 @@ describe('listOrdersForOrganizationHandler', () => {
       }],
     });
     expect(mockedGuestOrderService.getPaginatedGuestOrdersByOrgId).toHaveBeenCalledWith(
-      "dummy-org-id",
-      undefined,
-      [],
+      dummyOrganizationId,
       {
-        limit: 20,
-        offset: 0,
-        type: 'offset'
+        applyExpression: undefined,
+        expandExpression: undefined,
+        filterExpression: undefined,
+        orderParams: undefined,
+        pagination: {limit: 20, offset: 0, type: "offset"}
       }
     );
   });
@@ -193,7 +201,11 @@ describe('listOrdersForOrganizationHandler', () => {
   it('should throw error when pagination limit is greater than maxPageSize', async () => {
     await expect(listOrdersForOrganizationHandler(
       mockedGuestOrderService,
-      { maxPageSize: 10 },
+      {
+        defaultOffset: 0,
+        defaultPageSize: 10,
+        maxPageSize: 1,
+      },
       mockedLogger,
       {
         ...dummyContext,
@@ -206,7 +218,7 @@ describe('listOrdersForOrganizationHandler', () => {
       new NBError({
         code: defaultAdapter.ErrorCode.wrongParameter,
         httpCode: util.StatusCodes.BAD_REQUEST,
-        message: 'Page size exceeds 10 mbs',
+        message: 'Page size exceeds 1 mbs',
       })
     );
     expect(mockedGuestOrderService.getPaginatedGuestOrdersByOrgId).not.toHaveBeenCalled();

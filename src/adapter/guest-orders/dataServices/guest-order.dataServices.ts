@@ -69,25 +69,15 @@ export class GuestOrderDataService {
 
   async getPaginatedGuestOrdersByOrgId(
     orgId: string,
-    filter: util.Expression | undefined,
-    orderParams: util.OrderParam[],
-    paginationOptions: mongo.PaginationOptions
+    opts: util.ParsedPaginatedListQuery
   ): Promise<mongo.PaginatedFindResult<GuestOrderEntity>> {
-    const query = filter
-      ? {
-          ...util.filterToMongoQuery(filter),
-          organizationId: orgId,
-        }
-      : {
-          organizationId: orgId,
-        };
-    const sortParams = orderParams
-      ? util.orderParamsToMongoDbSortParams(orderParams)
-      : [];
-    return await this.guestOrderRepository.findWithPagination(
-      query,
-      sortParams,
-      paginationOptions
+    const queryOptions = {
+      ...opts,
+      filter: `{ organizationId: "${orgId}" }`,
+    }
+    const mongoQuery = util.paginatedListQueryToMongoQuery(opts);
+    return this.guestOrderRepository.findWithPagination<GuestOrderEntity>(
+      mongoQuery
     );
   }
 

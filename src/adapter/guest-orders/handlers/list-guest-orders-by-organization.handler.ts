@@ -1,9 +1,7 @@
-import { defaultAdapter } from '@basaldev/blocks-order-service';
 import {
   Logger,
   adapter,
   util,
-  NBError,
 } from '@basaldev/blocks-backend-sdk';
 import { GuestOrderDataService } from '../dataServices';
 import { get } from 'lodash';
@@ -47,42 +45,30 @@ import { ok } from 'assert';
  */
 export async function listOrdersForOrganizationHandler(
   guestOrderService: Pick<GuestOrderDataService, 'getPaginatedGuestOrdersByOrgId' | 'prepareGuestOrderResponse'>,
-  paginatedListQueryOptions: util.ParsePaginatedListQueryOptions,
+  paginationConfiguration: adapter.PaginationConfigurations,
   logger: Logger,
   context: adapter.AdapterHandlerContext
 ) {
   logger.info('listOrdersForOrganizationHandler');
-  const { params, reqInfo, query } = context;
+  const { params, headers, reqInfo, query } = context;
   const orgId = params?.orgId;
   ok(orgId, 'orgId is missing in params');
-  const paginatedListOptions = util.parsePaginatedListQuery(
-    query || {},
-    paginatedListQueryOptions
-  );
 
-  if (paginatedListOptions.pagination.type === 'no-pagination') {
-    throw new NBError({
-      code: defaultAdapter.ErrorCode.wrongParameter,
-      httpCode: util.StatusCodes.BAD_REQUEST,
-      message: 'pagination must be set',
-    });
-  }
+  const { defaultOffset, defaultPageSize, maxPageSize } =
+    paginationConfiguration;
 
-  const maxPageSize = paginatedListQueryOptions.maxPageSize || 0;
-  if (paginatedListOptions.pagination.limit > maxPageSize) {
-    throw new NBError({
-      code: defaultAdapter.ErrorCode.wrongParameter,
-      httpCode: util.StatusCodes.BAD_REQUEST,
-      message: `Page size exceeds ${maxPageSize} mbs`,
-    });
-  }
+  const parsedListQuery = util.parsePaginatedListQuery(query ?? {}, {
+    forcePagination: true,
+    limit: defaultPageSize,
+    maxPageSize,
+    offset: defaultOffset,
+  });
 
   const paginatedGuestOrders = await guestOrderService.getPaginatedGuestOrdersByOrgId(
     orgId,
-    paginatedListOptions.filterExpression,
-    paginatedListOptions.orderParams ?? [],
-    paginatedListOptions.pagination
+    parsedListQuery
   );
+
   const expandedGuestOrder = await guestOrderService.prepareGuestOrderResponse(
     get(context, 'query.$expand', '').toString(),
     paginatedGuestOrders.result
@@ -90,22 +76,18 @@ export async function listOrdersForOrganizationHandler(
 
   return {
     data: {
-      '@nextLink': paginatedGuestOrders.nextToken
-        ? util.buildNextLink(
-            reqInfo.host,
-            reqInfo.url,
-            paginatedGuestOrders.nextToken,
-            paginatedListOptions?.pagination.limit
-          )
-        : '',
-      '@previousLink': paginatedGuestOrders.previousToken
-        ? util.buildPreviousLink(
-            reqInfo.host,
-            reqInfo.url,
-            paginatedGuestOrders.previousToken,
-            paginatedListOptions?.pagination.limit
-          )
-        : '',
+      '@nextLink': util.buildNextLink(
+        headers.host ?? reqInfo.host,
+        reqInfo.url,
+        paginatedGuestOrders.nextToken,
+        parsedListQuery.pagination.limit
+      ),
+      '@previousLink': util.buildPreviousLink(
+        headers.host ?? reqInfo.host,
+        reqInfo.url,
+        paginatedGuestOrders.previousToken,
+        parsedListQuery.pagination.limit
+      ),
       count: paginatedGuestOrders.count,
       total: paginatedGuestOrders.total,
       value: expandedGuestOrder,

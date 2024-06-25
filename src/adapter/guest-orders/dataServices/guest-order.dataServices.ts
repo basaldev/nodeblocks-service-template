@@ -54,41 +54,17 @@ export class GuestOrderDataService {
     );
   }
 
-  async getOneOrder(id?: string): Promise<GuestOrderEntity | null> {
-    if (!id) {
-      return null;
-    }
-
+  async getOneOrder(id: string): Promise<GuestOrderEntity | null> {
     const order = await this.guestOrderRepository.findOne(id);
     return order;
   }
 
-  async getOneGuestOrderByOrgId(id?: string, orgId?: string): Promise<GuestOrderEntity | null> {
-    if (!id) {
-      return null;
-    }
-
+  async getOneGuestOrderByOrgId(id: string | undefined, orgId?: string): Promise<GuestOrderEntity | null> {
     const order = await this.guestOrderRepository.findOneBy({
       id,
       organizationId: orgId,
     });
     return order;
-  }
-
-  async getPaginatedGuestOrders(
-    filter: util.Expression | undefined,
-    orderParams: util.OrderParam[],
-    paginationOptions: mongo.PaginationOptions
-  ): Promise<mongo.PaginatedFindResult<GuestOrderEntity>> {
-    const query = filter ? util.filterToMongoQuery(filter) : {};
-    const sortParams = orderParams
-      ? util.orderParamsToMongoDbSortParams(orderParams)
-      : [];
-    return this.guestOrderRepository.findWithPagination(
-      query,
-      sortParams,
-      paginationOptions
-    );
   }
 
   async getPaginatedGuestOrdersByOrgId(

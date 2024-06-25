@@ -229,6 +229,37 @@ describe('Guest Order API', () => {
       expect(response.body).toEqual(guestOrders[0]);
     });
 
+    it('should get a guest order with expand items', async () => {
+      const response = await request(blockServices.guestOrderServer)
+        .get(`/orgs/${organization.id}/guest/orders/${guestOrders[0].id}?$expand=organization,lineItems.product,lineItems.variant`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${adminUserInfo.token}`)
+        .set(util.X_NB_FINGERPRINT, tokenVerification.fingerprint)
+        .expect(200);
+
+      expect(response.body).toMatchObject({
+        ...guestOrders[0],
+        lineItems: [{
+          productName: product.name,
+          quantity: 1,
+          sku: (product.variants[0] as ProductVariantResponse).sku,
+          variantTitle: dummyVariantTitle,
+          product,
+          variants: {
+            description: (product.variants[0] as ProductVariantResponse).description,
+            id: (product.variants[0] as ProductVariantResponse).id,
+            productId: (product.variants[0] as ProductVariantResponse).productId,
+            sku: (product.variants[0] as ProductVariantResponse).sku,
+            title: (product.variants[0] as ProductVariantResponse).title,
+          },
+        }],
+        organization: {
+          ...organization,
+          status: 'normal',
+        },
+      });
+    });
+
     it('should return 401 when user is not logged in', async () => {
       await request(blockServices.guestOrderServer)
         .get(`/orgs/${organization.id}/guest/orders/${guestOrders[0].id}`)

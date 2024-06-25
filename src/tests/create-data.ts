@@ -4,10 +4,7 @@ import {
   OrganizationDefaultAdapterRestSdk,
 } from '@basaldev/blocks-default-adapter-api';
 import { mongo, crypto } from '@basaldev/blocks-backend-sdk';
-import { CreateProductDto } from '@basaldev/blocks-default-adapter-api';
-import {
-  ProductResponse,
-} from '@basaldev/blocks-default-adapter-api/dist/catalog.type';
+import { CreateProductDto, ProductResponse } from '@basaldev/blocks-default-adapter-api';
 import { authSecrets } from './setup-tests';
 
 export const tokenVerification: crypto.TokenVerification = {

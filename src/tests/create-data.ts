@@ -3,39 +3,52 @@ import {
   CatalogDefaultAdapterRestSdk,
   OrganizationDefaultAdapterRestSdk,
 } from '@basaldev/blocks-default-adapter-api';
-import { ProductItem } from '../../src/adapter/guest-orders/types';
-
-import { Logger, mongo } from '@basaldev/blocks-backend-sdk';
+import { mongo, crypto } from '@basaldev/blocks-backend-sdk';
 import { CreateProductDto } from '@basaldev/blocks-default-adapter-api';
 import {
   ProductResponse,
-  ProductVariantResponse,
 } from '@basaldev/blocks-default-adapter-api/dist/catalog.type';
+import { authSecrets } from './setup-tests';
+
+export const tokenVerification: crypto.TokenVerification = {
+  domain: 'localhost',
+  fingerprint: 'aaaaaaaaaaa',
+  ip: '::ffff:127.0.0.1',
+};
+
+export interface CreateProductVariant {
+  sku: string;
+  title: string;
+  description: string;
+}
+
+export interface CreateProductPayloadItem {
+  categoryId: string;
+  organizationId: string;
+  productName: string;
+  variants: CreateProductVariant[];
+}
 
 export async function createUser(
   userAPI: UserDefaultAdapterRestSdk,
   data: { email: string; name: string }
 ) {
-  return await userAPI.createUser({
+  const user = await userAPI.createUser({
     avatar: `http://testUserId.avatar.mock.com/avatars/testUserId`,
     email: data.email,
     name: data.name,
     password: 'abcdefg123',
     typeId: '001',
   });
-}
-
-export async function createCustomer(
-  userAPI: UserDefaultAdapterRestSdk,
-  data: { email: string; name: string }
-) {
-  return await userAPI.createUser({
-    avatar: `http://testUserId.avatar.mock.com/avatars/testUserId`,
-    email: data.email,
-    name: data.name,
-    password: 'abcdefg123',
-    typeId: '000',
-  });
+  const token = crypto.generateUserAccessToken(
+    authSecrets,
+    user.id,
+    tokenVerification
+  );
+  return {
+    user,
+    token,
+  };
 }
 
 export async function createAdminUser(
@@ -53,18 +66,28 @@ export async function createAdminUser(
   await db
     .collection('users')
     .updateOne({ id: adminUser.id }, { $set: { typeId: '100' } });
+
+  const token = crypto.generateUserAccessToken(
+    authSecrets,
+    adminUser.id,
+    tokenVerification
+  );
   return {
-    ...adminUser,
-    typeId: '100',
+    user: {
+      ...adminUser,
+      typeId: '100',
+    },
+    token: token,
   };
 }
 
 export async function createOrganization(
+  db: mongo.Db,
   organizationAPI: OrganizationDefaultAdapterRestSdk,
   ownerId: string,
   orgName?: string
 ) {
-  return await organizationAPI.createOrganization({
+  const organization = await organizationAPI.createOrganization({
     addressLine1: 'Tokyo',
     certifiedQualifications: [],
     description: 'org description',
@@ -77,6 +100,9 @@ export async function createOrganization(
     size: '50',
     typeId: '001',
   });
+
+  await db.collection('organizations').updateOne({ id: organization.id }, { $set: { status: 'normal' } });
+  return organization;
 }
 
 export async function createCategory(db: mongo.Db, name: string, description?: string) {
@@ -85,53 +111,46 @@ export async function createCategory(db: mongo.Db, name: string, description?: s
     icon: null,
     name,
   });
-  return result.insertedId;
+  return result.insertedId.toString();
 }
 
-// export async function createProduct(
-//   categoryId: string,
-//   catalogAPI: CatalogDefaultAdapterRestSdk,
-//   orgId: string,
-//   productItem: ProductItem,
-//   payloadOverrides?: Partial<CreateProductDto>
-// ): Promise<ProductResponse> {
-//   const date: Date = new Date();
-//   const firstDay = getFirstDayOfMonth(date.getFullYear(), date.getMonth());
-//   const lastDay = getLastDayOfMonth(date.getFullYear(), date.getMonth());
-//   const payload = {
-//     additionalInformation: '',
-//     categoryId,
-//     description: '',
-//     dimensions: '',
-//     features: [],
-//     locationIds: [],
-//     name: productItem.productName,
-//     publication: {
-//       since: firstDay,
-//       status: 'ACTIVE' as const,
-//       until: lastDay,
-//     },
-//     organizationId: orgId,
-//     tags: ['tag1', 'tag2'],
-//     variantNote: '',
-//     variants: productItem.variantTitles.map((variantTitle) => ({
-//       price: { amount: 1000, currency: 'JPY', taxIncluded: true },
-//       sku: `SKU-${variantTitle}`,
-//       title: variantTitle,
-//     })),
-//     ...payloadOverrides,
-//   };
+export async function createProduct(
+  catalogAPI: CatalogDefaultAdapterRestSdk,
+  payloadItem: CreateProductPayloadItem,
+  payloadOverrides?: Partial<CreateProductDto>
+): Promise<ProductResponse> {
+  const date: Date = new Date();
+  const firstDay = getFirstDayOfMonth(date.getFullYear(), date.getMonth());
+  const lastDay = getLastDayOfMonth(date.getFullYear(), date.getMonth());
+  const payload = {
+    additionalInformation: '',
+    categoryId: payloadItem.categoryId,
+    description: '',
+    dimensions: '',
+    features: [],
+    locationIds: [],
+    name: payloadItem.productName,
+    publication: {
+      since: firstDay,
+      status: 'ACTIVE' as const,
+      until: lastDay,
+    },
+    tags: ['tag1', 'tag2'],
+    variantNote: '',
+    variants: payloadItem.variants,
+    ...payloadOverrides,
+  };
 
-//   const product = await catalogAPI.createProduct({
-//     orgId,
-//     product: payload,
-//   });
+  const product = await catalogAPI.createProduct({
+    orgId: payloadItem.organizationId,
+    product: payload,
+  });
 
-//   return await catalogAPI.getOneProduct({
-//     expand: 'variants',
-//     productId: product.id,
-//   });
-// }
+  return await catalogAPI.getOneProduct({
+    expand: 'variants',
+    productId: product.id,
+  });
+}
 
 export function getFirstDayOfMonth(year: number, month: number) {
   return new Date(year, month, 1);

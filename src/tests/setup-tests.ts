@@ -5,14 +5,20 @@ import {
   mongo,
   crypto,
   Logger,
+  util,
 } from '@basaldev/blocks-backend-sdk';
-import { bucketMock } from './mock';
+import { bucketMock, mailServiceMock } from './mock';
 
 import {
+  AuthDefaultAdapterRestSdk,
   UserDefaultAdapterRestSdk,
   CatalogDefaultAdapterRestSdk,
   OrganizationDefaultAdapterRestSdk,
 } from '@basaldev/blocks-default-adapter-api';
+import {
+  createNodeblocksUserApp,
+  defaultAdapter as UserAdapter,
+} from '@basaldev/blocks-user-service';
 import {
   defaultAdapter as CatalogAdapter,
   createNodeblocksCatalogApp,
@@ -28,9 +34,11 @@ import { createNodeblocksOrderApp } from '@basaldev/blocks-order-service';
 export interface NodeblocksServices {
   db: mongo.Db;
   logger: Logger;
+  userServer: Server,
   catalogServer: Server,
   organizationServer: Server,
   guestOrderServer: Server,
+  userDefaultAdapter: UserAdapter.UserDefaultAdapter,
   catalogDefaultAdapter: CatalogAdapter.CatalogDefaultAdapter,
   organizationDefaultAdapter: OrganizationAdapter.OrganizationDefaultAdapter,
   guestOrderAdapter: GuestOrderAdapter,
@@ -45,9 +53,11 @@ export const authSecrets: crypto.AuthSecrets = {
 };
 
 export const USER_PORT = 3001;
+export const AUTH_PORT = 3002;
 export const ORGANIZATION_PORT = 3003;
 export const CATALOG_PORT = 3004;
 export const GUEST_ORDER_PORT = 3005;
+export const authServiceEndpoint = `http://127.0.0.1:${AUTH_PORT}`;
 export const userServiceEndpoint = `http://127.0.0.1:${USER_PORT}`;
 export const organizationServiceEndpoint = `http://127.0.0.1:${ORGANIZATION_PORT}`;
 export const catalogServiceEndpoint = `http://127.0.0.1:${CATALOG_PORT}`;
@@ -78,6 +88,10 @@ export async function setupTests(): Promise<NodeblocksServices> {
   process.env.NODE_ENV = 'test';
   process.env.DB_URL = uri;
 
+  const authAPI = new AuthDefaultAdapterRestSdk(
+    authServiceEndpoint,
+    internalToken
+  );
   const userAPI = new UserDefaultAdapterRestSdk(
     userServiceEndpoint,
     internalToken
@@ -89,6 +103,26 @@ export async function setupTests(): Promise<NodeblocksServices> {
   const catalogAPI = new CatalogDefaultAdapterRestSdk(
     catalogServiceEndpoint,
     internalToken
+  );
+
+  const userDefaultAdapter = new UserAdapter.UserDefaultAdapter(
+    {
+      authEncSecret: authSecrets.authEncSecret,
+      authSignSecret: authSecrets.authSignSecret,
+      emailConfig: {
+        inviteUser: { enabled: false },
+        resetPassword: { enabled: false },
+        sender: 'test@test.com',
+        verifyEmail: { enabled: false },
+      },
+    },
+    {
+      authAPI,
+      bucket: bucketMock,
+      db,
+      mailService: mailServiceMock,
+      organizationAPI,
+    }
   );
 
   const catalogDefaultAdapter = new CatalogAdapter.CatalogDefaultAdapter(
@@ -129,6 +163,14 @@ export async function setupTests(): Promise<NodeblocksServices> {
     { catalogAPI, db, organizationAPI, userAPI }
   );
 
+  const userServer = await createNodeblocksUserApp({
+    corsOrigin: /.*/,
+  }).startService({
+    PORT: USER_PORT,
+    adapter: userDefaultAdapter,
+    env: 'development',
+  });
+
   const catalogServer = await createNodeblocksCatalogApp({
     jsonLimit: '10mb',
   }).startService({
@@ -151,14 +193,33 @@ export async function setupTests(): Promise<NodeblocksServices> {
     PORT: GUEST_ORDER_PORT,
     adapter: guestOrderAdapter,
     env: 'development',
+    customRoutes:[
+      util.createRoute({
+        ...guestOrderAdapter.createGuestOrder,
+        path: '/orgs/:orgId/guest/orders',
+        method: 'post',
+      }),
+      util.createRoute({
+        ...guestOrderAdapter.getGuestOrder,
+        path: '/orgs/:orgId/guest/orders/:orderId',
+        method: 'get',
+      }),
+      util.createRoute({
+        ...guestOrderAdapter.listGuestOrdersForOrganization,
+        path: '/orgs/:orgId/guest/orders',
+        method: 'get',
+      }),
+    ]
   });
 
   return {
     db,
     logger,
+    userServer,
     catalogServer,
     organizationServer,
     guestOrderServer,
+    userDefaultAdapter,
     catalogDefaultAdapter,
     organizationDefaultAdapter,
     guestOrderAdapter,

@@ -2,6 +2,7 @@ import { createNodeblocksOrderApp } from '@basaldev/blocks-order-service';
 import {
   crypto,
   mongo,
+  util,
 } from '@basaldev/blocks-backend-sdk';
 import { getEnvString } from './helper/utilities';
 
@@ -52,6 +53,23 @@ async function main() {
     PORT: Number(getEnvString('ORDER_PORT', '8081')),
     adapter: guestOrderAdapter,
     env: 'development',
+    customRoutes:[
+      util.createRoute({
+        ...guestOrderAdapter.createGuestOrder,
+        path: '/orgs/:orgId/guest/orders',
+        method: 'post',
+      }),
+      util.createRoute({
+        ...guestOrderAdapter.getGuestOrder,
+        path: '/orgs/:orgId/guest/orders/:orderId',
+        method: 'get',
+      }),
+      util.createRoute({
+        ...guestOrderAdapter.listGuestOrdersForOrganization,
+        path: '/orgs/:orgId/guest/orders',
+        method: 'get',
+      }),
+    ]
   });
 }
 

@@ -1,4 +1,4 @@
-import { productContainsVariant } from '../../../adapter/guest-orders/validators/product-contains-variant.validator';
+import { productContainsVariant } from '../../../../../adapter/guest-orders/validators/product-contains-variant.validator';
 import { ErrorCode } from '@basaldev/blocks-default-adapter-api';
 import {
   Logger,

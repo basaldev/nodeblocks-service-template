@@ -1,5 +1,5 @@
 import { defaultAdapter } from '@basaldev/blocks-order-service';
-import { listOrdersForOrganizationHandler } from '../../../../adapter/guest-orders/handlers';
+import { listOrdersForOrganizationHandler } from '../../../../../adapter/guest-orders/handlers';
 import {
   Logger,
   util,
@@ -8,14 +8,9 @@ import {
 } from '@basaldev/blocks-backend-sdk';
 
 describe('listOrdersForOrganizationHandler', () => {
-  const mockedOrderService = {
+  const mockedGuestOrderService = {
     getPaginatedGuestOrdersByOrgId: jest.fn(),
-  };
-  const mockedCatalogService = {
-    getOneProduct: jest.fn(),
-  };
-  const mockedOrganizationService = {
-    getOrganizationById: jest.fn(),
+    prepareGuestOrderResponse: jest.fn(),
   };
   const mockedLogger: Logger = {
     debug: jest.fn(),
@@ -52,13 +47,25 @@ describe('listOrdersForOrganizationHandler', () => {
     }],
     customer: dummyCustomer,
   };
+  mockedGuestOrderService.prepareGuestOrderResponse.mockResolvedValue([{
+    customer: dummyCustomer,
+    id: dummyOrderId,
+    status: 'PENDING',
+    lineItems: [{
+      productName: 'product name',
+      quantity: 1,
+      product: dummyProductId,
+      variants: dummyVariantId,
+    }],
+    organization: dummyOrganizationId,
+  }]);
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('should get a guest order', async () => {
-    mockedOrderService.getPaginatedGuestOrdersByOrgId.mockResolvedValue({
+    mockedGuestOrderService.getPaginatedGuestOrdersByOrgId.mockResolvedValue({
       count: 1,
       result: [{
         id: dummyOrderId,
@@ -76,10 +83,7 @@ describe('listOrdersForOrganizationHandler', () => {
     });
 
     const response = await listOrdersForOrganizationHandler(
-      mockedOrderService,
-      mockedCatalogService,
-      mockedOrganizationService,
-      [],
+      mockedGuestOrderService,
       { maxPageSize: 20 },
       mockedLogger,
       {
@@ -110,7 +114,7 @@ describe('listOrdersForOrganizationHandler', () => {
         organization: dummyOrganizationId,
       }],
     });
-    expect(mockedOrderService.getPaginatedGuestOrdersByOrgId).toHaveBeenCalledWith(
+    expect(mockedGuestOrderService.getPaginatedGuestOrdersByOrgId).toHaveBeenCalledWith(
       "dummy-org-id",
       undefined,
       [],
@@ -123,7 +127,7 @@ describe('listOrdersForOrganizationHandler', () => {
   });
 
   it('should get a guest order with next and previous links included in response', async () => {
-    mockedOrderService.getPaginatedGuestOrdersByOrgId.mockResolvedValue({
+    mockedGuestOrderService.getPaginatedGuestOrdersByOrgId.mockResolvedValue({
       count: 1,
       total: 1,
       nextToken: 'next-token',
@@ -143,10 +147,7 @@ describe('listOrdersForOrganizationHandler', () => {
     });
 
     const response = await listOrdersForOrganizationHandler(
-      mockedOrderService,
-      mockedCatalogService,
-      mockedOrganizationService,
-      [],
+      mockedGuestOrderService,
       { maxPageSize: 20 },
       mockedLogger,
       {
@@ -177,7 +178,7 @@ describe('listOrdersForOrganizationHandler', () => {
         organization: dummyOrganizationId,
       }],
     });
-    expect(mockedOrderService.getPaginatedGuestOrdersByOrgId).toHaveBeenCalledWith(
+    expect(mockedGuestOrderService.getPaginatedGuestOrdersByOrgId).toHaveBeenCalledWith(
       "dummy-org-id",
       undefined,
       [],
@@ -191,10 +192,7 @@ describe('listOrdersForOrganizationHandler', () => {
 
   it('should throw error when pagination limit is greater than maxPageSize', async () => {
     await expect(listOrdersForOrganizationHandler(
-      mockedOrderService,
-      mockedCatalogService,
-      mockedOrganizationService,
-      [],
+      mockedGuestOrderService,
       { maxPageSize: 10 },
       mockedLogger,
       {
@@ -211,6 +209,6 @@ describe('listOrdersForOrganizationHandler', () => {
         message: 'Page size exceeds 10 mbs',
       })
     );
-    expect(mockedOrderService.getPaginatedGuestOrdersByOrgId).not.toHaveBeenCalled();
+    expect(mockedGuestOrderService.getPaginatedGuestOrdersByOrgId).not.toHaveBeenCalled();
   });
 });

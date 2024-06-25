@@ -1,4 +1,5 @@
 import { setupTests, NodeblocksServices } from '../setup-tests';
+import request from 'supertest';
 
 describe('Guest Order API', () => {
   let blockServices: NodeblocksServices;
@@ -14,8 +15,12 @@ describe('Guest Order API', () => {
   });
 
   describe('POST /orgs/:orgId/guest/orders', () => {
-    it('should work', async () => {
-      expect(true).toBe(true);
+    it('should create a guest order successfully', async () => {
+      const response = await request(blockServices.guestOrderServer)
+        .post(`/orgs/${orgId}/orders`)
+        .set('Accept', 'application/json')
+        .send(payload)
+        .expect(201);
     });
   });
 });

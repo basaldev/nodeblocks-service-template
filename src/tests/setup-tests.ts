@@ -4,6 +4,7 @@ import {
   BunyanLoggerFactory,
   mongo,
   crypto,
+  Logger,
 } from '@basaldev/blocks-backend-sdk';
 import { bucketMock } from './mock';
 
@@ -25,6 +26,8 @@ import { GuestOrderAdapter, ADAPTER_NAME } from '../adapter/guest-orders/adapter
 import { createNodeblocksOrderApp } from '@basaldev/blocks-order-service';
 
 export interface NodeblocksServices {
+  db: mongo.Db;
+  logger: Logger;
   catalogServer: Server,
   organizationServer: Server,
   guestOrderServer: Server,
@@ -33,6 +36,7 @@ export interface NodeblocksServices {
   guestOrderAdapter: GuestOrderAdapter,
   catalogAPI: CatalogDefaultAdapterRestSdk,
   organizationAPI: OrganizationDefaultAdapterRestSdk;
+  userAPI: UserDefaultAdapterRestSdk;
 }
 
 export const authSecrets: crypto.AuthSecrets = {
@@ -69,6 +73,8 @@ export async function setupTests(): Promise<NodeblocksServices> {
     env: 'development',
     name: 'test',
   });
+  const logger = loggerFactory.createLogger();
+
   process.env.NODE_ENV = 'test';
   process.env.DB_URL = uri;
 
@@ -148,6 +154,8 @@ export async function setupTests(): Promise<NodeblocksServices> {
   });
 
   return {
+    db,
+    logger,
     catalogServer,
     organizationServer,
     guestOrderServer,
@@ -156,5 +164,6 @@ export async function setupTests(): Promise<NodeblocksServices> {
     guestOrderAdapter,
     catalogAPI,
     organizationAPI,
+    userAPI,
   };
 }

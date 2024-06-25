@@ -1,5 +1,5 @@
 import { defaultAdapter } from '@basaldev/blocks-order-service';
-import { createGuestOrderHandler } from '../../../../adapter/guest-orders/handlers';
+import { createGuestOrderHandler } from '../../../../../adapter/guest-orders/handlers';
 import {
   Logger,
   util,
@@ -8,13 +8,14 @@ import {
 } from '@basaldev/blocks-backend-sdk';
 
 describe('createGuestOrderHandler', () => {
-  const mockedOrderService = {
+  const mockedGuestOrderService = {
     createOrder: jest.fn(),
     getOneOrder: jest.fn(),
-  };
-  const mockedCatalogService = {
-    getAvailableProducts: jest.fn(),
-    getOneProduct: jest.fn(),
+    prepareGuestOrderResponse: jest.fn(),
+    catalogService: {
+      getOneProduct: jest.fn(),
+      getAvailableProducts: jest.fn(),
+    },
   };
   const mockedOrganizationService = {
     getOrganizationById: jest.fn(),
@@ -54,13 +55,25 @@ describe('createGuestOrderHandler', () => {
     }],
     customer: dummyCustomer,
   };
+  mockedGuestOrderService.prepareGuestOrderResponse.mockResolvedValue({
+    customer: dummyCustomer,
+    id: expect.any(String),
+    status: 'PENDING',
+    lineItems: [{
+      productName: 'product name',
+      quantity: 1,
+      product: dummyProductId,
+      variants: dummyVariantId,
+    }],
+    organization: dummyOrganizationId,
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('should create a guest order', async () => {
-    mockedCatalogService.getAvailableProducts.mockResolvedValue({
+    mockedGuestOrderService.catalogService.getAvailableProducts.mockResolvedValue({
       value: [{
         id: dummyProductId,
         name: 'product name',
@@ -70,8 +83,8 @@ describe('createGuestOrderHandler', () => {
         organization: dummyOrganizationId,
       }],
     });
-    mockedOrderService.createOrder.mockResolvedValue({ id: dummyOrderId });
-    mockedOrderService.getOneOrder.mockResolvedValue({
+    mockedGuestOrderService.createOrder.mockResolvedValue({ id: dummyOrderId });
+    mockedGuestOrderService.getOneOrder.mockResolvedValue({
       id: dummyOrderId,
       organizationId: dummyOrganizationId,
       lineItems: [{
@@ -85,10 +98,7 @@ describe('createGuestOrderHandler', () => {
     });
 
     const response = await createGuestOrderHandler(
-      mockedOrderService,
-      mockedCatalogService,
-      mockedOrganizationService,
-      [],
+      mockedGuestOrderService,
       mockedLogger,
       {
         ...dummyContext,
@@ -113,7 +123,7 @@ describe('createGuestOrderHandler', () => {
       }],
       organization: dummyOrganizationId,
     });
-    expect(mockedOrderService.createOrder).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mockedGuestOrderService.createOrder).toHaveBeenCalledWith(expect.objectContaining({
       customer: dummyBody.customer,
       lineItems: [{
         productId: dummyProductId,
@@ -124,27 +134,36 @@ describe('createGuestOrderHandler', () => {
       organizationId: dummyOrganizationId,
       status: defaultAdapter.Status.PENDING,
     }));
-    expect(mockedOrderService.getOneOrder).toHaveBeenCalledWith(dummyOrderId);
+    expect(mockedGuestOrderService.getOneOrder).toHaveBeenCalledWith(dummyOrderId);
+    expect(mockedGuestOrderService.prepareGuestOrderResponse).toHaveBeenCalledWith('', {
+      id: dummyOrderId,
+      organizationId: dummyOrganizationId,
+      lineItems: [{
+        productId: dummyProductId,
+        productName: 'product name',
+        quantity: 1,
+        variantId: dummyVariantId,
+      }],
+      customer: dummyCustomer,
+      status: defaultAdapter.Status.PENDING,
+    });
   });
 
   it('should throw error when guest order was not created', async () => {
-    mockedCatalogService.getAvailableProducts.mockResolvedValue({
+    mockedGuestOrderService.catalogService.getAvailableProducts.mockResolvedValue({
       value: [{
         id: dummyProductId,
         name: 'product name',
         variants: [{
-          id: 'variant-id-1',
+          id: dummyVariantId,
         }],
         organization: dummyOrganizationId,
       }],
     });
-    mockedOrderService.getOneOrder.mockResolvedValue(null);
+    mockedGuestOrderService.getOneOrder.mockResolvedValue(null);
 
     await expect(createGuestOrderHandler(
-      mockedOrderService,
-      mockedCatalogService,
-      mockedOrganizationService,
-      [],
+      mockedGuestOrderService,
       mockedLogger,
       {
         ...dummyContext,
@@ -161,7 +180,7 @@ describe('createGuestOrderHandler', () => {
       })
     );
 
-    expect(mockedOrderService.createOrder).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mockedGuestOrderService.createOrder).toHaveBeenCalledWith(expect.objectContaining({
       customer: dummyBody.customer,
       lineItems: [{
         productId: dummyProductId,
@@ -172,6 +191,50 @@ describe('createGuestOrderHandler', () => {
       organizationId: dummyOrganizationId,
       status: defaultAdapter.Status.PENDING,
     }));
-    expect(mockedOrderService.getOneOrder).toHaveBeenCalled();
+    expect(mockedGuestOrderService.getOneOrder).toHaveBeenCalled();
+    expect(mockedGuestOrderService.prepareGuestOrderResponse).not.toHaveBeenCalled();
+  });
+
+  it('should throw error when variant id does not match product', async () => {
+    mockedGuestOrderService.catalogService.getAvailableProducts.mockResolvedValue({
+      value: [{
+        id: dummyProductId,
+        name: 'product name',
+        variants: [{
+          id: 'variant-id-2',
+        }],
+        organization: dummyOrganizationId,
+      }],
+    });
+    mockedGuestOrderService.getOneOrder.mockResolvedValue(null);
+
+    await expect(createGuestOrderHandler(
+      mockedGuestOrderService,
+      mockedLogger,
+      {
+        ...dummyContext,
+        params: {
+          orgId: dummyOrganizationId,
+        },
+        body: {
+          items: [{
+            productId: dummyProductId,
+            variantId: dummyVariantId,
+            quantity: 1,
+          }],
+          customer: dummyCustomer,
+        },
+      }
+    )).rejects.toThrow(
+      new NBError({
+        code: defaultAdapter.ErrorCode.notFound,
+        httpCode: util.StatusCodes.BAD_REQUEST,
+        message: `Could not find item productId=${dummyProductId} variantId=${dummyVariantId}: Ensure the product and variant exist and are published (status=ACTIVE & since/until include current date)`,
+      })
+    );
+
+    expect(mockedGuestOrderService.createOrder).not.toHaveBeenCalled();
+    expect(mockedGuestOrderService.getOneOrder).not.toHaveBeenCalled();
+    expect(mockedGuestOrderService.prepareGuestOrderResponse).not.toHaveBeenCalled();
   });
 });

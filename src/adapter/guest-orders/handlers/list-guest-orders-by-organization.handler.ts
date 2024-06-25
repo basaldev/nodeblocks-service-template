@@ -1,4 +1,3 @@
-
 import { defaultAdapter } from '@basaldev/blocks-order-service';
 import {
   Logger,
@@ -6,12 +5,7 @@ import {
   util,
   NBError,
 } from '@basaldev/blocks-backend-sdk';
-import {
-  CatalogDefaultAdapterAPI,
-  OrganizationDefaultAdapterAPI,
-} from '@basaldev/blocks-default-adapter-api';
 import { GuestOrderDataService } from '../dataServices';
-import { prepareGuestOrderResponse } from '../utils';
 import { get } from 'lodash';
 import { ok } from 'assert';
 
@@ -52,10 +46,7 @@ import { ok } from 'assert';
  * - data: paginated list of orders
  */
 export async function listOrdersForOrganizationHandler(
-  orderService: Pick<GuestOrderDataService, 'getPaginatedGuestOrdersByOrgId'>,
-  catalogServiceAPI: Pick<CatalogDefaultAdapterAPI, 'getOneProduct'>,
-  organizationServiceAPI: Pick<OrganizationDefaultAdapterAPI, 'getOrganizationById'>,
-  orderCustomFieldDefinitions: util.CustomField[],
+  guestOrderService: Pick<GuestOrderDataService, 'getPaginatedGuestOrdersByOrgId' | 'prepareGuestOrderResponse'>,
   paginatedListQueryOptions: util.ParsePaginatedListQueryOptions,
   logger: Logger,
   context: adapter.AdapterHandlerContext
@@ -86,18 +77,15 @@ export async function listOrdersForOrganizationHandler(
     });
   }
 
-  const paginatedGuestOrders = await orderService.getPaginatedGuestOrdersByOrgId(
+  const paginatedGuestOrders = await guestOrderService.getPaginatedGuestOrdersByOrgId(
     orgId,
     paginatedListOptions.filterExpression,
     paginatedListOptions.orderParams ?? [],
     paginatedListOptions.pagination
   );
-  const expandedGuestOrder = await prepareGuestOrderResponse(
+  const expandedGuestOrder = await guestOrderService.prepareGuestOrderResponse(
     get(context, 'query.$expand', '').toString(),
-    paginatedGuestOrders.result,
-    orderCustomFieldDefinitions,
-    organizationServiceAPI,
-    catalogServiceAPI
+    paginatedGuestOrders.result
   );
 
   return {

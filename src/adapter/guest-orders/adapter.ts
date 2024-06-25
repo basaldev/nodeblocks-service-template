@@ -137,9 +137,6 @@ export class GuestOrderAdapter implements OrderAdapter {
       ): Promise<adapter.AdapterHandlerResponse> => {
         return createGuestOrderHandler(
           this.dataServices.guestOrder,
-          this.dependencies.catalogAPI,
-          this.dependencies.organizationAPI,
-          this.opts.customFields?.order ?? [],
           logger,
           context
         );
@@ -170,9 +167,6 @@ export class GuestOrderAdapter implements OrderAdapter {
       ): Promise<adapter.AdapterHandlerResponse> => {
         return await getGuestOrderHandler(
           this.dataServices.guestOrder,
-          this.dependencies.catalogAPI,
-          this.dependencies.organizationAPI,
-          this.opts.customFields?.order ?? [],
           logger,
           context
         );
@@ -202,9 +196,6 @@ export class GuestOrderAdapter implements OrderAdapter {
       ): Promise<adapter.AdapterHandlerResponse> => {
         return listOrdersForOrganizationHandler(
           this.dataServices.guestOrder,
-          this.dependencies.catalogAPI,
-          this.dependencies.organizationAPI,
-          this.opts.customFields?.order ?? [],
           this.opts.paginationConfiguration,
           logger,
           context

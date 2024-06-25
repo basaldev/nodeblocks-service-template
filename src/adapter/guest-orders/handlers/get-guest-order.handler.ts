@@ -6,12 +6,7 @@ import {
   util,
   NBError,
 } from '@basaldev/blocks-backend-sdk';
-import {
-  CatalogDefaultAdapterAPI,
-  OrganizationDefaultAdapterAPI,
-} from '@basaldev/blocks-default-adapter-api';
 import { get } from 'lodash';
-import { prepareGuestOrderResponse } from '../utils';
 
 /**
  * Get order handler
@@ -51,16 +46,13 @@ import { prepareGuestOrderResponse } from '../utils';
  * @returns 200 Status OK
  */
 export async function getGuestOrderHandler(
-  orderService: Pick<GuestOrderDataService, 'getOneGuestOrderByOrgId'>,
-  catalogServiceAPI: Pick<CatalogDefaultAdapterAPI, 'getOneProduct'>,
-  organizationServiceAPI: Pick<OrganizationDefaultAdapterAPI, 'getOrganizationById'>,
-  orderCustomFieldDefinitions: util.CustomField[],
+  guestOrderService: Pick<GuestOrderDataService, 'getOneGuestOrderByOrgId' | 'prepareGuestOrderResponse'>,
   logger: Logger,
   context: adapter.AdapterHandlerContext
 ) {
   logger.info('getGuestOrderHandler');
   const { params } = context;
-  const guestOrder = await orderService.getOneGuestOrderByOrgId(params?.orderId, params?.orgId);
+  const guestOrder = await guestOrderService.getOneGuestOrderByOrgId(params?.orderId, params?.orgId);
   if (!guestOrder) {
     throw new NBError({
       code: defaultAdapter.ErrorCode.notFound,
@@ -69,12 +61,9 @@ export async function getGuestOrderHandler(
     });
   }
 
-  const expandedGuestOrder = await prepareGuestOrderResponse(
+  const expandedGuestOrder = await guestOrderService.prepareGuestOrderResponse(
     get(context, 'query.$expand', '').toString(),
-    guestOrder,
-    orderCustomFieldDefinitions,
-    organizationServiceAPI,
-    catalogServiceAPI
+    guestOrder
   );
 
   return {

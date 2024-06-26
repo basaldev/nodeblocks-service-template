@@ -1,4 +1,4 @@
-import { setupTests, NodeblocksServices } from '../setup-tests';
+import { setupApiTests, NodeblocksServices } from '../setup-api-tests';
 import {
   createUser,
   createAdminUser,
@@ -44,7 +44,7 @@ describe('Guest Order API', () => {
   };
 
   beforeAll(async () => {
-    blockServices = await setupTests();
+    blockServices = await setupApiTests();
 
     adminUserInfo = await createAdminUser(
       blockServices.userAPI,
@@ -88,7 +88,7 @@ describe('Guest Order API', () => {
     );
 
     const guestOrderResponse = await request(blockServices.guestOrderServer)
-      .post(`/orgs/${organization.id}/guest/orders`)
+      .post(`/orgs/${organization.id}/orders`)
       .set('Accept', 'application/json')
       .send({
         items: [{
@@ -126,7 +126,7 @@ describe('Guest Order API', () => {
       };
 
       await request(blockServices.guestOrderServer)
-        .post(`/orgs/${organization.id}/guest/orders`)
+        .post(`/orgs/${organization.id}/orders`)
         .set('Accept', 'application/json')
         .send(guestOrderPayload)
         .expect(201);
@@ -143,7 +143,7 @@ describe('Guest Order API', () => {
       };
 
       await request(blockServices.guestOrderServer)
-        .post(`/orgs/non-existent-org/guest/orders`)
+        .post(`/orgs/non-existent-org/orders`)
         .set('Accept', 'application/json')
         .send(guestOrderPayload)
         .expect(404);
@@ -155,7 +155,7 @@ describe('Guest Order API', () => {
       };
 
       await request(blockServices.guestOrderServer)
-        .post(`/orgs/${organization.id}/guest/orders`)
+        .post(`/orgs/${organization.id}/orders`)
         .set('Accept', 'application/json')
         .send(guestOrderPayload)
         .expect(400);
@@ -172,7 +172,7 @@ describe('Guest Order API', () => {
       };
 
       await request(blockServices.guestOrderServer)
-        .post(`/orgs/${organization.id}/guest/orders`)
+        .post(`/orgs/${organization.id}/orders`)
         .set('Accept', 'application/json')
         .send(guestOrderPayload)
         .expect(400);
@@ -182,7 +182,7 @@ describe('Guest Order API', () => {
   describe('List Guest Orders', () => {
     it('should return list of guest orders', async () => {
       const response = await request(blockServices.guestOrderServer)
-        .get(`/orgs/${organization.id}/guest/orders`)
+        .get(`/orgs/${organization.id}/orders`)
         .set('Accept', 'application/json')
         .set('Authorization', `Bearer ${adminUserInfo.token}`)
         .set(util.X_NB_FINGERPRINT, tokenVerification.fingerprint)
@@ -193,14 +193,14 @@ describe('Guest Order API', () => {
 
     it('should return 401 when user is not logged in', async () => {
       await request(blockServices.guestOrderServer)
-        .get(`/orgs/${organization.id}/guest/orders`)
+        .get(`/orgs/${organization.id}/orders`)
         .set('Accept', 'application/json')
         .expect(401);
     });
 
     it('should return 403 when user is not an admin', async () => {
       await request(blockServices.guestOrderServer)
-        .get(`/orgs/${organization.id}/guest/orders`)
+        .get(`/orgs/${organization.id}/orders`)
         .set('Accept', 'application/json')
         .set('Authorization', `Bearer ${regularUserInfo.token}`)
         .set(util.X_NB_FINGERPRINT, tokenVerification.fingerprint)
@@ -209,7 +209,7 @@ describe('Guest Order API', () => {
 
     it('should return 404 error when organization does not exist', async () => {
       await request(blockServices.guestOrderServer)
-        .get(`/orgs/non-existent-org/guest/orders`)
+        .get(`/orgs/non-existent-org/orders`)
         .set('Accept', 'application/json')
         .set('Authorization', `Bearer ${adminUserInfo.token}`)
         .set(util.X_NB_FINGERPRINT, tokenVerification.fingerprint)
@@ -220,7 +220,7 @@ describe('Guest Order API', () => {
   describe('Get Guest Order', () => {
     it('should get a guest order', async () => {
       const response = await request(blockServices.guestOrderServer)
-        .get(`/orgs/${organization.id}/guest/orders/${guestOrders[0].id}`)
+        .get(`/orgs/${organization.id}/orders/${guestOrders[0].id}`)
         .set('Accept', 'application/json')
         .set('Authorization', `Bearer ${adminUserInfo.token}`)
         .set(util.X_NB_FINGERPRINT, tokenVerification.fingerprint)
@@ -231,7 +231,7 @@ describe('Guest Order API', () => {
 
     it('should get a guest order with expand items', async () => {
       const response = await request(blockServices.guestOrderServer)
-        .get(`/orgs/${organization.id}/guest/orders/${guestOrders[0].id}?$expand=organization,lineItems.product,lineItems.variant`)
+        .get(`/orgs/${organization.id}/orders/${guestOrders[0].id}?$expand=organization,lineItems.product,lineItems.variant`)
         .set('Accept', 'application/json')
         .set('Authorization', `Bearer ${adminUserInfo.token}`)
         .set(util.X_NB_FINGERPRINT, tokenVerification.fingerprint)
@@ -262,14 +262,14 @@ describe('Guest Order API', () => {
 
     it('should return 401 when user is not logged in', async () => {
       await request(blockServices.guestOrderServer)
-        .get(`/orgs/${organization.id}/guest/orders/${guestOrders[0].id}`)
+        .get(`/orgs/${organization.id}/orders/${guestOrders[0].id}`)
         .set('Accept', 'application/json')
         .expect(401);
     });
 
     it('should return 403 when user is not an admin', async () => {
       await request(blockServices.guestOrderServer)
-        .get(`/orgs/${organization.id}/guest/orders/${guestOrders[0].id}`)
+        .get(`/orgs/${organization.id}/orders/${guestOrders[0].id}`)
         .set('Accept', 'application/json')
         .set('Authorization', `Bearer ${regularUserInfo.token}`)
         .set(util.X_NB_FINGERPRINT, tokenVerification.fingerprint)
@@ -278,7 +278,7 @@ describe('Guest Order API', () => {
 
     it('should return 404 error when guest order does not belong to organization', async () => {
       await request(blockServices.guestOrderServer)
-        .get(`/orgs/different-org/guest/orders/${guestOrders[0].id}`)
+        .get(`/orgs/different-org/orders/${guestOrders[0].id}`)
         .set('Accept', 'application/json')
         .set('Authorization', `Bearer ${adminUserInfo.token}`)
         .set(util.X_NB_FINGERPRINT, tokenVerification.fingerprint)

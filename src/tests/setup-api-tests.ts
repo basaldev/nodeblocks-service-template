@@ -5,7 +5,6 @@ import {
   mongo,
   crypto,
   Logger,
-  util,
 } from '@basaldev/blocks-backend-sdk';
 import { bucketMock, mailServiceMock } from './mock';
 
@@ -72,7 +71,7 @@ export function getAppToken(
 
 export const internalToken = getAppToken(authSecrets, ADAPTER_NAME);
 
-export async function setupTests(): Promise<NodeblocksServices> {
+export async function setupApiTests(): Promise<NodeblocksServices> {
   const instance = await MongoMemoryServer.create({
     binary: { version: '5.0.13' },
   });
@@ -193,23 +192,6 @@ export async function setupTests(): Promise<NodeblocksServices> {
     PORT: GUEST_ORDER_PORT,
     adapter: guestOrderAdapter,
     env: 'development',
-    customRoutes:[
-      util.createRoute({
-        ...guestOrderAdapter.createGuestOrder,
-        path: '/orgs/:orgId/guest/orders',
-        method: 'post',
-      }),
-      util.createRoute({
-        ...guestOrderAdapter.getGuestOrder,
-        path: '/orgs/:orgId/guest/orders/:orderId',
-        method: 'get',
-      }),
-      util.createRoute({
-        ...guestOrderAdapter.listGuestOrdersForOrganization,
-        path: '/orgs/:orgId/guest/orders',
-        method: 'get',
-      }),
-    ]
   });
 
   return {

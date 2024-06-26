@@ -49,7 +49,7 @@ export class GuestOrderAdapter implements OrderAdapter {
    * - organizationExist: {@link isOrganizationExists}
    * - productContainVariant: {@link productContainVariant}
    */
-  createGuestOrder: adapter.HandlerAndValidators<
+  createOrder: adapter.HandlerAndValidators<
     {
       validBody: security.Predicate | undefined;
       organizationExists: security.Predicate | undefined;
@@ -66,7 +66,7 @@ export class GuestOrderAdapter implements OrderAdapter {
    * validators:
    * - orderBelongsToOrganization: {@link orderBelongsToOrganization}
    */
-  getGuestOrder: adapter.HandlerAndValidators<
+  getOrder: adapter.HandlerAndValidators<
     {
       authentication: security.Predicate | undefined;
       authorization: security.Predicate | undefined;
@@ -83,7 +83,7 @@ export class GuestOrderAdapter implements OrderAdapter {
    * validators:
    * - organizationExist: {@link isOrganizationExists}
    */
-  listGuestOrdersForOrganization: adapter.HandlerAndValidators<
+  listOrdersForOrganization: adapter.HandlerAndValidators<
     {
       authentication: security.Predicate | undefined;
       authorization: security.Predicate | undefined;
@@ -92,11 +92,8 @@ export class GuestOrderAdapter implements OrderAdapter {
   >;
 
   calculateOrderStatisticsForProducts: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
-  createOrder: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
   deleteOrder: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
-  getOrder: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
   listOrders: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
-  listOrdersForOrganization: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
   listOrdersForUser: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
   updateOrder: adapter.HandlerAndValidators<Record<string, security.Predicate>>;
 
@@ -130,7 +127,7 @@ export class GuestOrderAdapter implements OrderAdapter {
       ),
     };
 
-    this.createGuestOrder = {
+    this.createOrder = {
       handler: async (
         logger: Logger,
         context: adapter.AdapterHandlerContext
@@ -160,7 +157,7 @@ export class GuestOrderAdapter implements OrderAdapter {
       },
     };
 
-    this.getGuestOrder = {
+    this.getOrder = {
       handler: async (
         logger: Logger,
         context: adapter.AdapterHandlerContext
@@ -189,7 +186,7 @@ export class GuestOrderAdapter implements OrderAdapter {
       },
     };
 
-    this.listGuestOrdersForOrganization = {
+    this.listOrdersForOrganization = {
       handler: async (
         logger: Logger,
         context: adapter.AdapterHandlerContext
@@ -221,23 +218,11 @@ export class GuestOrderAdapter implements OrderAdapter {
       handler: adapter.notFoundHandler,
       validators: {},
     };
-    this.createOrder = {
-      handler: adapter.notFoundHandler,
-      validators: {},
-    };
     this.deleteOrder = {
       handler: adapter.notFoundHandler,
       validators: {},
     };
-    this.getOrder = {
-      handler: adapter.notFoundHandler,
-      validators: {},
-    };
     this.listOrders = {
-      handler: adapter.notFoundHandler,
-      validators: {},
-    };
-    this.listOrdersForOrganization = {
       handler: adapter.notFoundHandler,
       validators: {},
     };

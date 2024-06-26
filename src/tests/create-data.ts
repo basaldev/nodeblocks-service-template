@@ -5,7 +5,7 @@ import {
 } from '@basaldev/blocks-default-adapter-api';
 import { mongo, crypto } from '@basaldev/blocks-backend-sdk';
 import { CreateProductDto, ProductResponse } from '@basaldev/blocks-default-adapter-api';
-import { authSecrets } from './setup-tests';
+import { authSecrets } from './setup-api-tests';
 
 export const tokenVerification: crypto.TokenVerification = {
   domain: 'localhost',

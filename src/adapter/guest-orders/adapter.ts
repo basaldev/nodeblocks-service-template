@@ -21,7 +21,7 @@ import {
   getGuestOrderHandler,
 } from './handlers';
 
-export const ADAPTER_NAME = 'guest-order-default-adapter';
+export const ADAPTER_NAME = 'guest-order-adapter';
 
 /**
  * Guest Order adapter

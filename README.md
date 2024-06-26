@@ -375,3 +375,116 @@ export async function guestOrderBelongsToOrganization(
   });
 }
 ```
+
+## 💾 Using a Mongo repository to save data
+
+The Mongo db client should have been passed into the adapter as a dependency. Here is a sample to save data into a Mongo db repository. The `create()` function accepts the entity to save the data to.
+
+```typescript
+async createOrder(order: GuestOrderCreation): Promise<{ id: string }> {
+  return this.guestOrderRepository.create(
+    new GuestOrderEntity({
+      ...order,
+    })
+  );
+}
+```
+
+## ☎️ Using a Mongo repository to query data
+
+Here is a simple example to query data from a mongo db repository.
+
+```typescript
+async getOneOrder(id: string): Promise<GuestOrderEntity | null> {
+  const order = await this.guestOrderRepository.findOne(id);
+  return order;
+}
+```
+
+## 🔬 Automated tests
+
+We use Jest and supertest for our unit and API tests.
+
+### Unit tests for validator
+
+Here is an example of a unit test for a validator. We also mock the different services.
+
+```typescript
+it('should return 200 when product contains variant', async () => {
+  mockedCatalogService.getAvailableProducts.mockResolvedValue(dummyAvailableProducts);
+
+  const response = await productContainsVariant(
+    mockedCatalogService,
+    orgIdTargetField,
+    itemsTargetField,
+    mockedLogger,
+    {
+      ...dummyContext,
+      params: { orgId: dummyOrganizationId },
+      body: { items: [dummyItem] },
+    }
+  );
+
+  expect(response).toBe(util.StatusCodes.OK);
+  expect(mockedCatalogService.getAvailableProducts).toHaveBeenCalledWith({
+    queryOptions: {
+      expand: 'variants',
+      filter: `organizationId eq '${dummyOrganizationId}' and id in ['${dummyProductId}']`,
+      top: 1,
+    },
+  });
+});
+```
+
+### Unit tests for handler
+
+Here is an example of a unit test for the handler. We also mock different services and this will be an example of a handler throwing an error.
+
+```typescript
+it('should throw an error when guest order is not found', async () => {
+  mockedGuestOrderService.getOneGuestOrderByOrgId.mockResolvedValue(undefined);
+
+  await expect(getGuestOrderHandler(
+    mockedGuestOrderService,
+    mockedLogger,
+    {
+      ...dummyContext,
+      params: {
+        orderId: dummyOrderId,
+        orgId: dummyOrganizationId,
+      },
+    }
+  )).rejects.toThrow(
+    new NBError({
+      code: defaultAdapter.ErrorCode.notFound,
+      httpCode: util.StatusCodes.NOT_FOUND,
+      message: 'operation failed to get an order',
+    })
+  );
+  expect(mockedGuestOrderService.getOneGuestOrderByOrgId).toHaveBeenCalledWith(dummyOrderId, dummyOrganizationId);
+  expect(mockedGuestOrderService.prepareGuestOrderResponse).not.toHaveBeenCalled();
+});
+```
+
+### API tests
+
+API tests use jest and supertest and we don't mock any dependency services. We use mongodb memory server and create and start the dependent services locally. Data is created before using either `beforeAll` or `beforeEach` to setup the API tests. In this guest order example, we create an admin user to create an organization, category, product, and product variant before the tests.
+
+```typescript
+it('should return 201 and successfully create a guest order', async () => {
+  const guestOrderPayload = {
+    items: [{
+      productId: product.id,
+      variantId: (product.variants[0] as ProductVariantResponse).id,
+      quantity: 3
+    }],
+    customer: dummyCustomer,
+  };
+
+  await request(blockServices.guestOrderServer)
+    .post(`/orgs/${organization.id}/orders`)
+    .set('Accept', 'application/json')
+    .send(guestOrderPayload)
+    .expect(201);
+});
+```

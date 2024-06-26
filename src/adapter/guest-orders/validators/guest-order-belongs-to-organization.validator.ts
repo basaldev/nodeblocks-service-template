@@ -1,8 +1,5 @@
-// Copyright 2024 Co-Lift Inc.
-
 import { defaultAdapter } from '@basaldev/blocks-order-service';
 import { GuestOrderDataService } from '../dataServices';
-
 import {
   util,
   adapter,
@@ -14,7 +11,7 @@ import { OrganizationDefaultAdapterAPI } from '@basaldev/blocks-default-adapter-
 import { get } from 'lodash';
 
 /**
- * Order belongs to organization validator
+ * Guest order belongs to organization validator
  *
  * @group Validators
  *
@@ -30,7 +27,7 @@ import { get } from 'lodash';
  *
  * 3. Check if order has the same organization ID as the organization in targetField
  *
- * @param orderService injected order service to get order
+ * @param guestOrderService injected order service to get order
  *
  * @param organizationAPI injected API use to get organization
  *
@@ -52,7 +49,7 @@ import { get } from 'lodash';
  * @returns 200 Status OK
  */
 export async function guestOrderBelongsToOrganization(
-  orderService: Pick<GuestOrderDataService, 'getOneOrder'>,
+  guestOrderService: Pick<GuestOrderDataService, 'getOneOrder'>,
   organizationAPI: Pick<OrganizationDefaultAdapterAPI, 'getOrganizationById'>,
   orgIdTargetField: security.TargetField,
   orderIdTargetField: security.TargetField,
@@ -80,7 +77,7 @@ export async function guestOrderBelongsToOrganization(
     [orderIdTargetField.type, orderIdTargetField.name],
     null
   );
-  const order = await orderService.getOneOrder(orderId);
+  const order = await guestOrderService.getOneOrder(orderId);
   if (!order) {
     throw new NBError({
       code: defaultAdapter.ErrorCode.notFound,
@@ -89,9 +86,10 @@ export async function guestOrderBelongsToOrganization(
     });
   }
 
-  if (order.organizationId === organizationId) {
+  if (order.organizationId === organization.id) {
     return util.StatusCodes.OK;
   }
+
   throw new NBError({
     code: defaultAdapter.ErrorCode.noPermission,
     httpCode: util.StatusCodes.FORBIDDEN,

@@ -2,10 +2,8 @@ import { defaultAdapter } from '@basaldev/blocks-order-service';
 import {
   ProductResponse,
   Organization,
-  CatalogDefaultAdapterAPI,
-  OrganizationDefaultAdapterAPI
  } from '@basaldev/blocks-default-adapter-api';
-import { util, adapter, mongo } from '@basaldev/blocks-backend-sdk';
+import { util, adapter, mongo, security } from '@basaldev/blocks-backend-sdk';
 
 export interface GuestOrderAdapter extends adapter.Adapter {
   createGuestOrder: adapter.HandlerAndValidators;
@@ -13,11 +11,18 @@ export interface GuestOrderAdapter extends adapter.Adapter {
   listGuestOrdersForOrganization: adapter.HandlerAndValidators;
 }
 
-export interface GuestOrderDefaultAdapterOptions {
+export interface GuestOrderAdapterOptions {
   /** Secret use to encrypt the JWT Token */
   authEncSecret: string;
   /** Secret use to sign the JWT Token */
   authSignSecret: string;
+  /**
+   * Function that will be called to authenticate the user via validators. When
+   * not provided, this will default to the default for the given authType.
+   *
+   * Typically you would only provide this if designing your own authentication.
+   */
+  authenticate?: security.AuthenticationFunction;
   /** Custom field configuration for each data type */
   customFields?: {
       order?: util.CustomField[];
@@ -32,13 +37,6 @@ export interface GuestOrderDefaultAdapterOptions {
       guestOrder: string;
   };
 }
-
-export interface GuestOrderDefaultAdapterDependencies {
-  catalogAPI: CatalogDefaultAdapterAPI;
-  db: mongo.Db;
-  organizationAPI: OrganizationDefaultAdapterAPI;
-}
-
 
 export interface CreateGuestOrderRequest extends util.WithCustomFields {
   customer: GuestOrderCustomer;

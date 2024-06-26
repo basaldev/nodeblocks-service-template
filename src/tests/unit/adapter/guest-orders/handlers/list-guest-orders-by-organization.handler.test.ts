@@ -1,5 +1,5 @@
 import { defaultAdapter } from '@basaldev/blocks-order-service';
-import { listOrdersForOrganizationHandler } from '../../../../adapter/guest-orders/handlers';
+import { listOrdersForOrganizationHandler } from '../../../../../adapter/guest-orders/handlers';
 import {
   Logger,
   util,
@@ -8,14 +8,9 @@ import {
 } from '@basaldev/blocks-backend-sdk';
 
 describe('listOrdersForOrganizationHandler', () => {
-  const mockedOrderService = {
+  const mockedGuestOrderService = {
     getPaginatedGuestOrdersByOrgId: jest.fn(),
-  };
-  const mockedCatalogService = {
-    getOneProduct: jest.fn(),
-  };
-  const mockedOrganizationService = {
-    getOrganizationById: jest.fn(),
+    prepareGuestOrderResponse: jest.fn(),
   };
   const mockedLogger: Logger = {
     debug: jest.fn(),
@@ -52,13 +47,25 @@ describe('listOrdersForOrganizationHandler', () => {
     }],
     customer: dummyCustomer,
   };
+  mockedGuestOrderService.prepareGuestOrderResponse.mockResolvedValue([{
+    customer: dummyCustomer,
+    id: dummyOrderId,
+    status: 'PENDING',
+    lineItems: [{
+      productName: 'product name',
+      quantity: 1,
+      product: dummyProductId,
+      variants: dummyVariantId,
+    }],
+    organization: dummyOrganizationId,
+  }]);
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('should get a guest order', async () => {
-    mockedOrderService.getPaginatedGuestOrdersByOrgId.mockResolvedValue({
+    mockedGuestOrderService.getPaginatedGuestOrdersByOrgId.mockResolvedValue({
       count: 1,
       result: [{
         id: dummyOrderId,
@@ -76,11 +83,12 @@ describe('listOrdersForOrganizationHandler', () => {
     });
 
     const response = await listOrdersForOrganizationHandler(
-      mockedOrderService,
-      mockedCatalogService,
-      mockedOrganizationService,
-      [],
-      { maxPageSize: 20 },
+      mockedGuestOrderService,
+      {
+        defaultOffset: 0,
+        defaultPageSize: 20,
+        maxPageSize: 1000,
+      },
       mockedLogger,
       {
         ...dummyContext,
@@ -110,20 +118,20 @@ describe('listOrdersForOrganizationHandler', () => {
         organization: dummyOrganizationId,
       }],
     });
-    expect(mockedOrderService.getPaginatedGuestOrdersByOrgId).toHaveBeenCalledWith(
-      "dummy-org-id",
-      undefined,
-      [],
+    expect(mockedGuestOrderService.getPaginatedGuestOrdersByOrgId).toHaveBeenCalledWith(
+      dummyOrganizationId,
       {
-        limit: 20,
-        offset: 0,
-        type: 'offset'
+        applyExpression: undefined,
+        expandExpression: undefined,
+        filterExpression: undefined,
+        orderParams: undefined,
+        pagination: {limit: 20, offset: 0, type: "offset"}
       }
     );
   });
 
   it('should get a guest order with next and previous links included in response', async () => {
-    mockedOrderService.getPaginatedGuestOrdersByOrgId.mockResolvedValue({
+    mockedGuestOrderService.getPaginatedGuestOrdersByOrgId.mockResolvedValue({
       count: 1,
       total: 1,
       nextToken: 'next-token',
@@ -143,11 +151,12 @@ describe('listOrdersForOrganizationHandler', () => {
     });
 
     const response = await listOrdersForOrganizationHandler(
-      mockedOrderService,
-      mockedCatalogService,
-      mockedOrganizationService,
-      [],
-      { maxPageSize: 20 },
+      mockedGuestOrderService,
+      {
+        defaultOffset: 0,
+        defaultPageSize: 20,
+        maxPageSize: 1000,
+      },
       mockedLogger,
       {
         ...dummyContext,
@@ -177,25 +186,26 @@ describe('listOrdersForOrganizationHandler', () => {
         organization: dummyOrganizationId,
       }],
     });
-    expect(mockedOrderService.getPaginatedGuestOrdersByOrgId).toHaveBeenCalledWith(
-      "dummy-org-id",
-      undefined,
-      [],
+    expect(mockedGuestOrderService.getPaginatedGuestOrdersByOrgId).toHaveBeenCalledWith(
+      dummyOrganizationId,
       {
-        limit: 20,
-        offset: 0,
-        type: 'offset'
+        applyExpression: undefined,
+        expandExpression: undefined,
+        filterExpression: undefined,
+        orderParams: undefined,
+        pagination: {limit: 20, offset: 0, type: "offset"}
       }
     );
   });
 
   it('should throw error when pagination limit is greater than maxPageSize', async () => {
     await expect(listOrdersForOrganizationHandler(
-      mockedOrderService,
-      mockedCatalogService,
-      mockedOrganizationService,
-      [],
-      { maxPageSize: 10 },
+      mockedGuestOrderService,
+      {
+        defaultOffset: 0,
+        defaultPageSize: 10,
+        maxPageSize: 1,
+      },
       mockedLogger,
       {
         ...dummyContext,
@@ -208,9 +218,9 @@ describe('listOrdersForOrganizationHandler', () => {
       new NBError({
         code: defaultAdapter.ErrorCode.wrongParameter,
         httpCode: util.StatusCodes.BAD_REQUEST,
-        message: 'Page size exceeds 10 mbs',
+        message: 'Page size exceeds 1 mbs',
       })
     );
-    expect(mockedOrderService.getPaginatedGuestOrdersByOrgId).not.toHaveBeenCalled();
+    expect(mockedGuestOrderService.getPaginatedGuestOrdersByOrgId).not.toHaveBeenCalled();
   });
 });

@@ -1,16 +1,17 @@
+import { createNodeblocksOrderApp } from '@basaldev/blocks-order-service';
 import {
   crypto,
   mongo,
 } from '@basaldev/blocks-backend-sdk';
 import { getEnvString } from './helper/utilities';
-import { createNodeblockGuestsOrderApp } from './createNodeblocksGuestOrderApp';
 
 import {
+  UserDefaultAdapterRestSdk,
   OrganizationDefaultAdapterRestSdk,
   CatalogDefaultAdapterRestSdk,
 } from '@basaldev/blocks-default-adapter-api';
 
-import { GuestOrderDefaultAdapter, ADAPTER_NAME } from './adapter';
+import { GuestOrderAdapter, ADAPTER_NAME } from './adapter/guest-orders/adapter';
 
 async function main() {
   const opts = {
@@ -37,11 +38,15 @@ async function main() {
       getEnvString('ORGANIZATION_ENDPOINT', ''),
       internalToken
     ),
+    userAPI: new UserDefaultAdapterRestSdk(
+      getEnvString('USER_ENDPOINT', ''),
+      internalToken
+    ),
   };
 
-  const guestOrderAdapter = new GuestOrderDefaultAdapter(opts, dependencies);
+  const guestOrderAdapter = new GuestOrderAdapter(opts, dependencies);
 
-  await createNodeblockGuestsOrderApp({
+  await createNodeblocksOrderApp({
     corsOrigin: /.*/,
   }).startService({
     PORT: Number(getEnvString('ORDER_PORT', '8081')),

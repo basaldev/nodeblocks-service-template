@@ -1,5 +1,5 @@
 import { defaultAdapter } from '@basaldev/blocks-order-service';
-import { getGuestOrderHandler } from '../../../../adapter/guest-orders/handlers';
+import { getGuestOrderHandler } from '../../../../../adapter/guest-orders/handlers';
 import {
   Logger,
   util,
@@ -8,15 +8,9 @@ import {
 } from '@basaldev/blocks-backend-sdk';
 
 describe('getGuestOrderHandler', () => {
-  const mockedOrderService = {
+  const mockedGuestOrderService = {
     getOneGuestOrderByOrgId: jest.fn(),
-  };
-  const mockedCatalogService = {
-    getAvailableProducts: jest.fn(),
-    getOneProduct: jest.fn(),
-  };
-  const mockedOrganizationService = {
-    getOrganizationById: jest.fn(),
+    prepareGuestOrderResponse: jest.fn(),
   };
   const mockedLogger: Logger = {
     debug: jest.fn(),
@@ -53,13 +47,25 @@ describe('getGuestOrderHandler', () => {
     }],
     customer: dummyCustomer,
   };
+  mockedGuestOrderService.prepareGuestOrderResponse.mockResolvedValue({
+    customer: dummyCustomer,
+    id: expect.any(String),
+    status: 'PENDING',
+    lineItems: [{
+      productName: 'product name',
+      quantity: 1,
+      product: dummyProductId,
+      variants: dummyVariantId,
+    }],
+    organization: dummyOrganizationId,
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('should get a guest order', async () => {
-    mockedOrderService.getOneGuestOrderByOrgId.mockResolvedValue({
+    mockedGuestOrderService.getOneGuestOrderByOrgId.mockResolvedValue({
       id: dummyOrderId,
       organizationId: dummyOrganizationId,
       lineItems: [{
@@ -73,10 +79,7 @@ describe('getGuestOrderHandler', () => {
     });
 
     const response = await getGuestOrderHandler(
-      mockedOrderService,
-      mockedCatalogService,
-      mockedOrganizationService,
-      [],
+      mockedGuestOrderService,
       mockedLogger,
       {
         ...dummyContext,
@@ -101,17 +104,26 @@ describe('getGuestOrderHandler', () => {
       }],
       organization: dummyOrganizationId,
     });
-    expect(mockedOrderService.getOneGuestOrderByOrgId).toHaveBeenCalledWith(dummyOrderId, dummyOrganizationId);
+    expect(mockedGuestOrderService.getOneGuestOrderByOrgId).toHaveBeenCalledWith(dummyOrderId, dummyOrganizationId);
+    expect(mockedGuestOrderService.prepareGuestOrderResponse).toHaveBeenCalledWith('', {
+      id: dummyOrderId,
+      organizationId: dummyOrganizationId,
+      lineItems: [{
+        productId: dummyProductId,
+        productName: 'product name',
+        quantity: 1,
+        variantId: dummyVariantId,
+      }],
+      customer: dummyCustomer,
+      status: defaultAdapter.Status.PENDING,
+    });
   });
 
   it('should throw an error when guest order is not found', async () => {
-    mockedOrderService.getOneGuestOrderByOrgId.mockResolvedValue(undefined);
+    mockedGuestOrderService.getOneGuestOrderByOrgId.mockResolvedValue(undefined);
 
     await expect(getGuestOrderHandler(
-      mockedOrderService,
-      mockedCatalogService,
-      mockedOrganizationService,
-      [],
+      mockedGuestOrderService,
       mockedLogger,
       {
         ...dummyContext,
@@ -127,6 +139,7 @@ describe('getGuestOrderHandler', () => {
         message: 'operation failed to get an order',
       })
     );
-    expect(mockedOrderService.getOneGuestOrderByOrgId).toHaveBeenCalledWith(dummyOrderId, dummyOrganizationId);
+    expect(mockedGuestOrderService.getOneGuestOrderByOrgId).toHaveBeenCalledWith(dummyOrderId, dummyOrganizationId);
+    expect(mockedGuestOrderService.prepareGuestOrderResponse).not.toHaveBeenCalled();
   });
 });

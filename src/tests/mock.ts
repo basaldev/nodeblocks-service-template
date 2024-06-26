@@ -28,3 +28,12 @@ export const bucketMock: bucket.Bucket = {
     publicUrl: 'dummyPublicUrl',
   }),
 };
+
+export const mailServiceMock: external.mail.MailService = {
+  async sendMail(
+    mailData: external.mail.MailData,
+    mailOptions?: external.mail.MailOptions
+  ): Promise<boolean> {
+    return true;
+  },
+};

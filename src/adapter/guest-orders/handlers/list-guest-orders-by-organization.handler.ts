@@ -1,17 +1,9 @@
-
-import { defaultAdapter } from '@basaldev/blocks-order-service';
 import {
   Logger,
   adapter,
   util,
-  NBError,
 } from '@basaldev/blocks-backend-sdk';
-import {
-  CatalogDefaultAdapterAPI,
-  OrganizationDefaultAdapterAPI,
-} from '@basaldev/blocks-default-adapter-api';
 import { GuestOrderDataService } from '../dataServices';
-import { prepareGuestOrderResponse } from '../utils';
 import { get } from 'lodash';
 import { ok } from 'assert';
 
@@ -20,7 +12,7 @@ import { ok } from 'assert';
  *
  * @group Handlers
  *
- * @description This handler is used to get orders for an organization by applying the following steps in sequence:
+ * @description This handler is used to get guest orders for an organization by applying the following steps in sequence:
  *
  * 1. Checks orgId provided
  *
@@ -52,72 +44,50 @@ import { ok } from 'assert';
  * - data: paginated list of orders
  */
 export async function listOrdersForOrganizationHandler(
-  orderService: Pick<GuestOrderDataService, 'getPaginatedGuestOrdersByOrgId'>,
-  catalogServiceAPI: Pick<CatalogDefaultAdapterAPI, 'getOneProduct'>,
-  organizationServiceAPI: Pick<OrganizationDefaultAdapterAPI, 'getOrganizationById'>,
-  orderCustomFieldDefinitions: util.CustomField[],
-  paginatedListQueryOptions: util.ParsePaginatedListQueryOptions,
+  guestOrderService: Pick<GuestOrderDataService, 'getPaginatedGuestOrdersByOrgId' | 'prepareGuestOrderResponse'>,
+  paginationConfiguration: adapter.PaginationConfigurations,
   logger: Logger,
   context: adapter.AdapterHandlerContext
 ) {
   logger.info('listOrdersForOrganizationHandler');
-  const { params, reqInfo, query } = context;
+  const { params, headers, reqInfo, query } = context;
   const orgId = params?.orgId;
   ok(orgId, 'orgId is missing in params');
-  const paginatedListOptions = util.parsePaginatedListQuery(
-    query || {},
-    paginatedListQueryOptions
-  );
 
-  if (paginatedListOptions.pagination.type === 'no-pagination') {
-    throw new NBError({
-      code: defaultAdapter.ErrorCode.wrongParameter,
-      httpCode: util.StatusCodes.BAD_REQUEST,
-      message: 'pagination must be set',
-    });
-  }
+  const { defaultOffset, defaultPageSize, maxPageSize } =
+    paginationConfiguration;
 
-  const maxPageSize = paginatedListQueryOptions.maxPageSize || 0;
-  if (paginatedListOptions.pagination.limit > maxPageSize) {
-    throw new NBError({
-      code: defaultAdapter.ErrorCode.wrongParameter,
-      httpCode: util.StatusCodes.BAD_REQUEST,
-      message: `Page size exceeds ${maxPageSize} mbs`,
-    });
-  }
+  const parsedListQuery = util.parsePaginatedListQuery(query ?? {}, {
+    forcePagination: true,
+    limit: defaultPageSize,
+    maxPageSize,
+    offset: defaultOffset,
+  });
 
-  const paginatedGuestOrders = await orderService.getPaginatedGuestOrdersByOrgId(
+  const paginatedGuestOrders = await guestOrderService.getPaginatedGuestOrdersByOrgId(
     orgId,
-    paginatedListOptions.filterExpression,
-    paginatedListOptions.orderParams ?? [],
-    paginatedListOptions.pagination
+    parsedListQuery
   );
-  const expandedGuestOrder = await prepareGuestOrderResponse(
+
+  const expandedGuestOrder = await guestOrderService.prepareGuestOrderResponse(
     get(context, 'query.$expand', '').toString(),
-    paginatedGuestOrders.result,
-    orderCustomFieldDefinitions,
-    organizationServiceAPI,
-    catalogServiceAPI
+    paginatedGuestOrders.result
   );
 
   return {
     data: {
-      '@nextLink': paginatedGuestOrders.nextToken
-        ? util.buildNextLink(
-            reqInfo.host,
-            reqInfo.url,
-            paginatedGuestOrders.nextToken,
-            paginatedListOptions?.pagination.limit
-          )
-        : '',
-      '@previousLink': paginatedGuestOrders.previousToken
-        ? util.buildPreviousLink(
-            reqInfo.host,
-            reqInfo.url,
-            paginatedGuestOrders.previousToken,
-            paginatedListOptions?.pagination.limit
-          )
-        : '',
+      '@nextLink': util.buildNextLink(
+        headers.host ?? reqInfo.host,
+        reqInfo.url,
+        paginatedGuestOrders.nextToken,
+        parsedListQuery.pagination.limit
+      ),
+      '@previousLink': util.buildPreviousLink(
+        headers.host ?? reqInfo.host,
+        reqInfo.url,
+        paginatedGuestOrders.previousToken,
+        parsedListQuery.pagination.limit
+      ),
       count: paginatedGuestOrders.count,
       total: paginatedGuestOrders.total,
       value: expandedGuestOrder,

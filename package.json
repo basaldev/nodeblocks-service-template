@@ -7,6 +7,8 @@
   "main": "index.js",
   "scripts": {
     "test": "jest --runInBand --detectOpenHandles --forceExit --coverage --no-cache --silent",
+    "test:unit": "jest --runInBand --detectOpenHandles --forceExit --coverage --no-cache --silent src/tests/unit",
+    "test:api": "jest --runInBand --detectOpenHandles --forceExit --coverage --no-cache --silent src/tests/api",
     "test:verbose": "jest --runInBand --detectOpenHandles --forceExit --coverage --no-cache",
     "start:dev": "dotenv ts-node src/index.ts",
     "start": "node dist/index.js",

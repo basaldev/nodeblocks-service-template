@@ -13,9 +13,12 @@
 
 **Set Node Version**
 
-```sh
+```exclamation
 nvm use
 ```
+
+| ❗️ If you are going to deploy to Nodeblocks Cloud, it is important to use NPM package manager and NOT Yarn |
+|------------------------------------------------------------------------------------------------------------|
 
 ## 🛠 Environment Variables
 
@@ -37,15 +40,15 @@ cp .env.default .env
 
 **Set the correct values in the .env file:**
 
-| Name                  | Description                   | Default Value |
-| --------------------- | ----------------------------- | ------------- |
-| AUTH_ENC_SECRET       | encryption key                | -             |
-| AUTH_SIGN_SECRET      | secret key                    | -             |
-| DATABASE_URL          | service db url                | -             |
-| PORT                  | port number                   | -             |
-| CATALOG_ENDPOINT      | catalog service endpoint      | -             |
-| USER_ENDPOINT         | user service endpoint         | -             |
-| ORGANIZATION_ENDPOINT | organization service endpoint | -             |
+| Name                  | Description                   |
+| --------------------- | ----------------------------- |
+| AUTH_ENC_SECRET       | encryption key                |
+| AUTH_SIGN_SECRET      | secret key                    |
+| DATABASE_URL          | service db url                |
+| PORT                  | port number                   |
+| CATALOG_ENDPOINT      | catalog service endpoint      |
+| USER_ENDPOINT         | user service endpoint         |
+| ORGANIZATION_ENDPOINT | organization service endpoint |
 
 #### ⚠️ NOTE
 
@@ -65,8 +68,32 @@ npm ci
 npm run start:dev
 ```
 
+**Run Tests**
+
+```bash
+npm run test
+```
+
+**Run Unit Tests**
+
+```bash
+npm run test:unit
+```
+
+**Run API Tests**
+
+```bash
+npm run test:api
+```
+
+**Run Tests in verbose mode (--silent false)**
+
+```bash
+npm run test:verbose
+```
+
 ## 🗂️ Folder Structure
-The folder structure should look something like this:
+
 ```bash
 src
 ├── adapter
@@ -491,6 +518,7 @@ it('should return 201 and successfully create a guest order', async () => {
 
 Here are the prerequisites to deploying your custom service to Nodeblocks Cloud
 
+- Use NPM instead of Yarn or other package managers.
 - Knowledge of deploying default service.
 - Nodeblocks Dev Token for NPM access.
 - Code in a GitHub repo

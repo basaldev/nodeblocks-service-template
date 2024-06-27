@@ -87,6 +87,42 @@ describe('productContainsVariant', () => {
     });
   });
 
+  it('should throw error when product is not found in organization', async () => {
+    mockedCatalogService.getAvailableProducts.mockResolvedValue(dummyAvailableProducts);
+
+    await expect(productContainsVariant(
+      mockedCatalogService,
+      orgIdTargetField,
+      itemsTargetField,
+      mockedLogger,
+      {
+        ...dummyContext,
+        params: { orgId: dummyOrganizationId },
+        body: { items: [{
+          productId: 'non-existent-product-id',
+          productName: 'product-name',
+          quantity: 1,
+          sku: '1234567890',
+          variantId: dummyVariantId1,
+          variantTitle: 'variant-title',
+        }] },
+      }
+    )).rejects.toThrow(
+      new NBError({
+        code: ErrorCode.notFound,
+        httpCode: util.StatusCodes.BAD_REQUEST,
+        message: `Could not find item productId=non-existent-product-id: Ensure the product exists in the organization and is published (status=ACTIVE & since/until include current date)`,
+      })
+    );
+    expect(mockedCatalogService.getAvailableProducts).toHaveBeenCalledWith({
+      queryOptions: {
+        expand: 'variants',
+        filter: `organizationId eq '${dummyOrganizationId}' and id in ['${dummyProductId}']`,
+        top: 1,
+      },
+    });
+  });
+
   it('should throw error when variant is not in product', async () => {
     mockedCatalogService.getAvailableProducts.mockResolvedValue(dummyAvailableProducts);
 

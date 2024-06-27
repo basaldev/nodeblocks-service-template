@@ -63,10 +63,18 @@ export async function productContainsVariant(
 
   await Promise.all(orderItems.map((item) => {
     const product = productResults.value.find((product) => product.id === item.productId);
+    if (!product) {
+      throw new NBError({
+        code: ErrorCode.notFound,
+        httpCode: util.StatusCodes.BAD_REQUEST,
+        message: `Could not find item productId=${item.productId}: Ensure the product exists in the organization and is published (status=ACTIVE & since/until include current date)`,
+      });
+    }
+
     const variant = (product?.variants as ProductVariantResponse[]).find(
       (variant) => variant.id === item.variantId
     );
-    if (!product || !variant) {
+    if (!variant) {
       throw new NBError({
         code: ErrorCode.notFound,
         httpCode: util.StatusCodes.BAD_REQUEST,

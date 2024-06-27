@@ -1,0 +1,173 @@
+{
+	"info": {
+		"_postman_id": "28af4d42-72b9-4567-b640-9e50987df52b",
+		"name": "Guest Order Service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "31595434"
+	},
+	"item": [
+		{
+			"name": "Create Guest Order",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"items\": [\n        {\n            \"productId\": \"\",\n            \"variantId\": \"\",\n            \"quantity\": 1\n        }\n    ],\n    \"customer\": {\n        \"name\": \"\",\n        \"nameKana\": \"\",\n        \"addressLine1\": \"\",\n        \"phone\": \"\",\n        \"email\": \"\"\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{guest_order_endpoint}}/orgs/:orgId/orders",
+					"host": [
+						"{{guest_order_endpoint}}"
+					],
+					"path": [
+						"orgs",
+						":orgId",
+						"orders"
+					],
+					"variable": [
+						{
+							"key": "orgId",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List of Orders by Organization",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{auth_access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-nb-fingerprint",
+						"value": "{{auth_fingerprint}}"
+					}
+				],
+				"url": {
+					"raw": "{{guest_order_endpoint}}/orgs/:orgId/orders",
+					"host": [
+						"{{guest_order_endpoint}}"
+					],
+					"path": [
+						"orgs",
+						":orgId",
+						"orders"
+					],
+					"variable": [
+						{
+							"key": "orgId",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Order",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{auth_access_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-nb-fingerprint",
+						"value": "{{auth_fingerprint}}"
+					}
+				],
+				"url": {
+					"raw": "{{guest_order_endpoint}}/orgs/:orgId/orders/:orderId",
+					"host": [
+						"{{guest_order_endpoint}}"
+					],
+					"path": [
+						"orgs",
+						":orgId",
+						"orders",
+						":orderId"
+					],
+					"variable": [
+						{
+							"key": "orgId",
+							"value": ""
+						},
+						{
+							"key": "orderId",
+							"value": ""
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "guest_order_endpoint",
+			"value": "http://localhost",
+			"type": "string"
+		},
+		{
+			"key": "guest_order_port",
+			"value": "8086",
+			"type": "string"
+		},
+		{
+			"key": "auth_fingerprint",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "auth_access_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

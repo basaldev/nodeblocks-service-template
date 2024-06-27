@@ -113,7 +113,6 @@ export class GuestOrderAdapter implements OrderAdapter {
         defaultPageSize: 20,
         maxPageSize: 1000,
       },
-      serviceEndpoints: opts.serviceEndpoints,
     };
     this.dependencies = dependencies;
     this.dataServices = {

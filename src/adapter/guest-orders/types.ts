@@ -29,13 +29,6 @@ export interface GuestOrderAdapterOptions {
   };
   /** Default pagination configuration for each of the list endpoints */
   paginationConfiguration?: adapter.PaginationConfigurations;
-  /**
-   * Endpoints for different services
-   * Used in the API when returning links to services.
-   */
-  serviceEndpoints: {
-      guestOrder: string;
-  };
 }
 
 export interface CreateGuestOrderRequest extends util.WithCustomFields {

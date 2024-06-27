@@ -17,9 +17,6 @@ async function main() {
   const opts = {
     authEncSecret: getEnvString('AUTH_ENC_SECRET', ''),
     authSignSecret: getEnvString('AUTH_SIGN_SECRET', ''),
-    serviceEndpoints: {
-      guestOrder: getEnvString('ORDER_ENDPOINT', ''),
-    },
   };
   const internalToken = crypto.generateAppAccessToken(
     {

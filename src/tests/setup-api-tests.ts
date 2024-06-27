@@ -157,7 +157,6 @@ export async function setupApiTests(): Promise<NodeblocksServices> {
     {
       authEncSecret: authSecrets.authEncSecret,
       authSignSecret: authSecrets.authSignSecret,
-      serviceEndpoints: { guestOrder: GUEST_ORDER_SERVER_URL },
     },
     { catalogAPI, db, organizationAPI, userAPI }
   );

@@ -1,5 +1,4 @@
-<p align="center"><img width="300px" src="docs/logo.png" />
-</p>
+<p align="center"><img width="300px" src="docs/assets/logo.png" /></p>
 <h1 align="center" >nodeblocks-service-template</h1>
 <p align="center">A nodeblocks service template using a guest order as example</p>
 
@@ -43,8 +42,7 @@ cp .env.default .env
 | AUTH_ENC_SECRET       | encryption key                | -             |
 | AUTH_SIGN_SECRET      | secret key                    | -             |
 | DATABASE_URL          | service db url                | -             |
-| ORDER_PORT            | port number                   | -             |
-| ORDER_ENDPOINT        | order service endpoint        | -             |
+| PORT                  | port number                   | -             |
 | CATALOG_ENDPOINT      | catalog service endpoint      | -             |
 | USER_ENDPOINT         | user service endpoint         | -             |
 | ORGANIZATION_ENDPOINT | organization service endpoint | -             |
@@ -70,21 +68,21 @@ npm run start:dev
 ## 🗂️ Folder Structure
 The folder structure should look something like this:
 ```bash
-|-- src
-    |-- adapter
-        |-- guest-orders
-            |-- dataServices
-            |-- handlers
-            `-- validators
-    |-- helper
-    |-- tests
-        |-- api
-        `-- unit
-            |-- adapter
-                |-- guest-orders
-                    |-- handlers
-                    `-- validators
-            |-- helper
+src
+├── adapter
+│   └── guest-orders
+│       ├── dataServices
+│       ├── handlers
+│       └── validators
+├── helper
+└── tests
+    ├── api
+    └── unit
+        ├── adapter
+        │   └── guest-orders
+        │       ├── handlers
+        │       └── validators
+        └── helper
 ```
 | Folder                                | Description                                                 |
 | ------------------------------------- | ----------------------------------------------------------- |
@@ -488,3 +486,49 @@ it('should return 201 and successfully create a guest order', async () => {
     .expect(201);
 });
 ```
+
+## 🚚 Deploying to Nodeblocks Cloud
+
+Here are the prerequisites to deploying your custom service to Nodeblocks Cloud
+
+- Knowledge of deploying default service.
+- Nodeblocks Dev Token for NPM access.
+- Code in a GitHub repo
+- A Project in Nodeblocks Cloud
+
+#### How to deploy to Nodeblocks Cloud
+
+1. In the `Editor` page at the top, click on `Add service`.
+2. In the `Add service` drop down, click on `+ Custom ...`.
+3. Enter the Name of your new service.
+4. Enter the SSH Repository URL of the repo.
+5. If you have the code in a different branch than `main`, then enter the branch.
+6. Click Add.
+7. You will presented with a popup with an ssh-key. You will need to add that key to your github repo under `Settings -> Deploy Keys`. Read-only permissions is fine.
+8. Once you create the service, go to the section and click on `Service Configs`.
+9. Here, you will add the environment variables:
+   | Name                  | Description                   |
+   | --------------------- | ----------------------------- |
+   | AUTH_ENC_SECRET       | encryption key                |
+   | AUTH_SIGN_SECRET      | secret key                    |
+   | DATABASE_URL          | service db url                |
+   | CATALOG_ENDPOINT      | catalog service endpoint      |
+   | USER_ENDPOINT         | user service endpoint         |
+   | ORGANIZATION_ENDPOINT | organization service endpoint |
+   | NODEBLOCKS_DEV_TOKEN  | npm token                     |
+10. Once you enter the service configs, click on the 3 dots in the top right part of the section, and click `Deploy`.
+
+You can also view the logs to check on deployment.
+
+## 📮 Using Postman Collection
+
+After deploying or running the service locally, you can use Postman to test your API. Included in this repo is a [Postman Collection](Guest_Order_Service.postman_collection.json) that you can import. This collection contains variables that you can define. Here are the variables:
+
+| Name                 | Description                     |
+| -------------------- | ------------------------------- |
+| guest_order_endpoint | The endpoint of the guest order.
+| guest_order_port     | Port number of the guest order endpoint. If using nodeblocks cloud, this is not necessary.
+| auth_fingerprint     | The auth fingerprint for the headers.
+| auth_access_token    | The access token for authentication.
+
+You will need an organization with a product and product variant to test the guest order.

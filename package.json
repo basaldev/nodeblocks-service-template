@@ -17,7 +17,7 @@
     "prepare": "npm run build"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=18"
   },
   "devDependencies": {
     "@basaldev/blocks-organization-service": "^3.0.0",

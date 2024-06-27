@@ -46,7 +46,7 @@ async function main() {
   await createNodeblocksOrderApp({
     corsOrigin: /.*/,
   }).startService({
-    PORT: Number(getEnvString('ORDER_PORT', '8081')),
+    PORT: Number(getEnvString('PORT', '8086')),
     adapter: guestOrderAdapter,
     env: 'development',
   });

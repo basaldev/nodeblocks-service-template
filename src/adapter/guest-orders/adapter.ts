@@ -2,7 +2,7 @@
 /* eslint-disable sort-keys-fix/sort-keys-fix */
 
 import { defaultAdapter, OrderAdapter } from '@basaldev/blocks-order-service';
-import { crypto, adapter, security, Logger } from '@basaldev/blocks-backend-sdk';
+import {crypto, adapter, security, Logger, NBError, BaseErrorCode, util} from '@basaldev/blocks-backend-sdk';
 import { GuestOrderAdapterOptions } from './types';
 
 import { partial } from 'lodash';
@@ -172,9 +172,50 @@ export class GuestOrderAdapter implements OrderAdapter {
           this.authSecrets,
           this.opts.authenticate
         ),
-        authorization: this.dependencies.userAPI.createIsAdminUserValidator(
-          this.authSecrets
-        ),
+        authorization: async (
+          logger: Logger,
+          context: adapter.AdapterHandlerContext
+        ) => {
+          const orgId = context.params?.orgId;
+          if (!orgId) {
+            throw new NBError({
+              code: BaseErrorCode.wrongParameter,
+              httpCode: 400,
+              message: `Cannot find organizationId parameter`,
+            });
+          }
+          const authResult = await this.opts.authenticate(
+            this.authSecrets,
+            context,
+            logger
+          );
+
+          //マイクロサービス間通信であれば無条件でOK
+          if (crypto.isAppAccessToken(authResult)) {
+            return util.StatusCodes.OK;
+          }
+          //実行ユーザーのID
+          const userId = authResult.userId;
+
+          //実行ユーザーが招待先の組織の所有者でなければバリデーションエラーとする
+          const userOrgResult =
+            (await this.dependencies.organizationAPI!.getUserOrganizationRole({
+              orgId,
+              userId,
+            })) as any;
+
+          if (!userOrgResult ||
+            userOrgResult.role !== 'owner'
+          ) {
+            throw new NBError({
+              code: BaseErrorCode.noPermission,
+              httpCode: 403,
+              message: 'Unauthorized',
+            });
+          }
+
+          return 200;
+        },
         guestOrderBelongsToOrganization: partial(
           guestOrderBelongsToOrganization,
           this.dataServices.guestOrder,

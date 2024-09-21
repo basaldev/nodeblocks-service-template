@@ -45,7 +45,7 @@
     "decimal.js": "^10.4.3",
     "dotenv": "^16.4.5",
     "dotenv-cli": "^7.4.2",
-    "express": "^4.19.2",
+    "express": "^4.21.0",
     "lodash": "^4.17.21",
     "ts-node": "^10.9.2"
   }
